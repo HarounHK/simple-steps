@@ -74,8 +74,8 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          <Link className="text-sm mt-3 text-right text-black" href={"/Login"}>
-            Already have an account? <span className="underline">Login</span>
+          <Link className="text-sm mt-3 text-right text-black" href={"/Signup"}>
+            Already have an account? <span className="underline">Signup</span>
           </Link>
         </form>
       </div>
