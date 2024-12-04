@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-8">
@@ -6,18 +8,18 @@ export default function Home() {
         Start managing your steps toward health and wellness.
       </p>
       <div className="space-x-4">
-        <a
+        <Link
           href="/Login"
           className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
         >
           Log In
-        </a>
-        <a
+        </Link>
+        <Link
           href="/Signup"
           className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
         >
           Sign Up
-        </a>
+        </Link>
       </div>
     </div>
   );
