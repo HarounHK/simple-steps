@@ -13,7 +13,7 @@ export default function SignupPage() {
 
   const router = useRouter(); 
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!name || !email || !password) {
@@ -50,8 +50,7 @@ export default function SignupPage() {
       });
 
       if (res.ok) {
-        const form = e.target;
-        form.reset();
+        const form = e.target as HTMLFormElement;        form.reset();
         router.push("/Login");
       } else {
         console.log("User registration failed.");
