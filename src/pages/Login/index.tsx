@@ -13,7 +13,7 @@ export default function LoginPage() {
               Email
             </label>
             <input
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:ring-blue-300"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="email"
               id="email"
               placeholder="Enter your email"
@@ -24,7 +24,7 @@ export default function LoginPage() {
               Password
             </label>
             <input
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:ring-blue-300"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="password"
               id="password"
               placeholder="Enter your password"
