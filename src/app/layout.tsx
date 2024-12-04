@@ -1,3 +1,4 @@
+import {AuthProvider} from "../app/providers"
 import "../styles/globals.css";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -7,7 +8,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>Simple Steps</title>
       </head>
       <body>
-        <main>{children}</main>
+        <main>
+          <AuthProvider>
+          {children}
+          </AuthProvider>
+          </main>
       </body>
     </html>
   );

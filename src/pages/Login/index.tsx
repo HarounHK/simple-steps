@@ -1,18 +1,50 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const router = useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError("Invalid Credentials");
+        return;
+      }
+      router.replace("Profile");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">Log In</h1>
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 mb-2" htmlFor="email">
               Email
             </label>
             <input
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="email"
               id="email"
@@ -24,6 +56,7 @@ export default function LoginPage() {
               Password
             </label>
             <input
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="password"
               id="password"
@@ -36,13 +69,15 @@ export default function LoginPage() {
           >
             Log In
           </button>
-        </form>
-        <p className="text-sm mt-4 text-center text-black">
-          Dont have an account?{" "}
-          <Link href="/Signup" className="text-blue-500 underline">
-            Sign Up
+          {error && (
+            <div className="bg-red-500 text-white w-fit text-sm py-1 px-3 rounded-md mt-2">
+              {error}
+            </div>
+          )}
+          <Link className="text-sm mt-3 text-right text-black" href={"/Login"}>
+            Already have an account? <span className="underline">Login</span>
           </Link>
-        </p>
+        </form>
       </div>
     </div>
   );
