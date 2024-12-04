@@ -9,27 +9,32 @@ export const authOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {},
-
       async authorize(credentials) {
         const { email, password } = credentials;
 
         try {
           await connectMongoDB();
-          const user = await User.findOne({ email });
 
+          const user = await User.findOne({ email });
           if (!user) {
+            console.error("User not found");
             return null;
           }
 
           const passwordsMatch = await bcrypt.compare(password, user.password);
-
           if (!passwordsMatch) {
+            console.error("Password mismatch");
             return null;
           }
 
-          return user;
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+          };
         } catch (error) {
-          console.log("Error: ", error);
+          console.error("Authorization error:", error);
+          return null;
         }
       },
     }),
@@ -39,7 +44,7 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    Login: "/",
+    signIn: "/",
   },
 };
 
