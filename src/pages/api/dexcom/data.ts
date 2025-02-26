@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 
 //Formating  date to Dexcoms required date format: YYYY-MM-DDTHH:mm:ss
-
 function formatDateForDexcom(date: Date): string {
   return date.toISOString().split('.')[0];
 }
@@ -10,9 +9,6 @@ function formatDateForDexcom(date: Date): string {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   let token = req.cookies.dexcom_token;
   let refreshToken = req.cookies.dexcom_refresh_token;
-
-  console.log("Access Token:", token ? token.substring(0, 15) : "");
-  console.log("Refresh Token:", refreshToken ? refreshToken.substring(0, 15) : "");
 
   // Refreshing token if access token is missing/outdated
   if (!token && refreshToken) {
@@ -31,7 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { access_token, refresh_token: newRefreshToken, expires_in } = refreshResponse.data;
 
-      console.log("Token refresh successful.");
       token = access_token;
 
       // Storing updated tokens in cookies
@@ -48,11 +43,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Rejecting request if no valid token is available
   if (!token) {
-    return res.status(401).json({ error: "Your account is unauthorized. Plese lg in to access data." });
+    return res.status(401).json({ error: "Your account is unauthorized. Please log in to access data." });
   }
 
   try {
-    console.log("Fetching glucose data...");
 
     const now = new Date();
     const startDate = formatDateForDexcom(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)); // previous7 days
@@ -62,7 +56,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log("Glucose data retrieved successfully.");
     return res.status(200).json(response.data);
   } catch (error: any) {
     console.error("Dexcom data fetch error:", error.response?.data || error.message);
