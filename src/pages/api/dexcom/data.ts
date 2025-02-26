@@ -1,14 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
-//Formating  date to Dexcoms required date format: YYYY-MM-DDTHH:mm:ss
+//Formating date to Dexcoms required date format: YYYY-MM-DDTHH:mm:ss
 function formatDateForDexcom(date: Date): string {
   return date.toISOString().split('.')[0];
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   let token = req.cookies.dexcom_token;
-  let refreshToken = req.cookies.dexcom_refresh_token;
+  const refreshToken = req.cookies.dexcom_refresh_token; 
 
   // Refreshing token if access token is missing/outdated
   if (!token && refreshToken) {
@@ -35,8 +35,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         `dexcom_refresh_token=${newRefreshToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`
       ]);
 
-    } catch (refreshError: any) {
-      console.error("Token refresh failed:", refreshError.response?.data || refreshError.message);
+    } catch (refreshError: unknown) { 
+      const axiosError = refreshError as AxiosError;
+      console.error("Token refresh failed:", axiosError.response?.data || axiosError.message);
       return res.status(401).json({ error: "Session expired. Please log in again." });
     }
   }
@@ -57,8 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     return res.status(200).json(response.data);
-  } catch (error: any) {
-    console.error("Dexcom data fetch error:", error.response?.data || error.message);
-    return res.status(500).json({ error: "Failed to fetch glucose data", details: error.response?.data || error.message });
+  } catch (error: unknown) { 
+    const axiosError = error as AxiosError;
+    console.error("Dexcom data fetch error:", axiosError.response?.data || axiosError.message);
+    return res.status(500).json({ error: "Failed to fetch glucose data", details: axiosError.response?.data || axiosError.message });
   }
 }

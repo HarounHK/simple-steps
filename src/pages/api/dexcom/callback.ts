@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { code, state } = req.query; // Extracting authorization code and state from the query parameters
@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Storing tokens in HTTP only cookies for continousbauthentication (no need to log in everytime server restarts)
+    // Storing tokens in HTTP only cookies for continous authentication (no need to log in everytime server restarts)
     res.setHeader('Set-Cookie', [
       `dexcom_token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expires_in}`,
       `dexcom_refresh_token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`
@@ -34,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Redirecting user to the data retrieval endpoint after successful authentication
     res.writeHead(302, { Location: "/api/dexcom/data" });
     return res.end();
-  } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to obtain access token', details: error.response?.data || error.message });
+  } catch (error: unknown) { 
+    const axiosError = error as AxiosError;
+    return res.status(500).json({ error: 'Failed to obtain access token', details: axiosError.response?.data || axiosError.message });
   }
 }
