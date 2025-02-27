@@ -1,16 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function LoginPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/Home"); 
+    }
+  }, [status, router]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,11 +34,13 @@ export default function LoginPage() {
         setError("Invalid Credentials");
         return;
       }
-      router.replace("/Home"); 
+      router.replace("/Home");
     } catch (error) {
       console.log(error);
     }
   };
+
+  if (status === "authenticated") return null; 
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
