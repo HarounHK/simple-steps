@@ -1,17 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function SignupPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/Home");
+    }
+  }, [status, router]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const router = useRouter(); 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,16 +49,11 @@ export default function SignupPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       if (res.ok) {
-        const form = e.target as HTMLFormElement;        form.reset();
-        router.push("/Login");
+        router.push("/login"); 
       } else {
         console.log("User registration failed.");
       }
@@ -60,60 +62,45 @@ export default function SignupPage() {
     }
   };
 
+  if (status === "authenticated") return null; 
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">Sign Up</h1>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="Name">
-              Name
-            </label>
+            <label className="block text-gray-700 mb-2">Name</label>
             <input
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:ring-blue-300 text-black"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="text"
-              id="Name"
-              placeholder=""
+              placeholder="Enter your name"
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="email">
-              Email
-            </label>
+            <label className="block text-gray-700 mb-2">Email</label>
             <input
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring focus:ring-blue-300 text-black"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="email"
-              id="email"
-              placeholder=""
+              placeholder="Enter your email"
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="password">
-              Password
-            </label>
+            <label className="block text-gray-700 mb-2">Password</label>
             <input
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300 "
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
               type="password"
-              id="password"
-              placeholder=""
+              placeholder="Enter your password"
             />
           </div>
-          <button
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-            type="submit"
-          >
+          <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
             Sign Up
           </button>
-          {error && (
-            <div className="bg-red-500 text-white w-fit text-sm py-1 px-3 rounded-md mt-2">
-              {error}
-            </div>
-          )}
-
-          <Link className="text-sm mt-3 text-right text-black" href={"/Login"}>
+          {error && <div className="bg-red-500 text-white p-2 rounded mt-2">{error}</div>}
+          <Link className="text-sm mt-3 text-right text-black" href="/login">
             Already have an account? <span className="underline">Login</span>
           </Link>
         </form>
