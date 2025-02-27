@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 export default function LoginPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function LoginPage() {
     }
   };
 
-  if (status === "authenticated") return null; 
+  if (status === "authenticated") return null;
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -69,7 +69,7 @@ export default function LoginPage() {
             Log In
           </button>
           {error && <div className="bg-red-500 text-white p-2 rounded mt-2">{error}</div>}
-          <Link className="text-sm mt-3 text-right text-black" href="/signup">
+          <Link className="text-sm mt-3 text-right text-black" href="/Signup">
             Dont have an account? <span className="underline">Sign up</span>
           </Link>
         </form>

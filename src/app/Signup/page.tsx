@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 export default function SignupPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession(); 
   const router = useRouter();
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/Home");
+      router.replace("/Home"); 
     }
   }, [status, router]);
 
@@ -53,7 +53,7 @@ export default function SignupPage() {
       });
 
       if (res.ok) {
-        router.push("/login"); 
+        router.push("/login");
       } else {
         console.log("User registration failed.");
       }
@@ -62,7 +62,7 @@ export default function SignupPage() {
     }
   };
 
-  if (status === "authenticated") return null; 
+  if (status === "authenticated") return null;
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -100,7 +100,7 @@ export default function SignupPage() {
             Sign Up
           </button>
           {error && <div className="bg-red-500 text-white p-2 rounded mt-2">{error}</div>}
-          <Link className="text-sm mt-3 text-right text-black" href="/login">
+          <Link className="text-sm mt-3 text-right text-black" href="/Login">
             Already have an account? <span className="underline">Login</span>
           </Link>
         </form>
