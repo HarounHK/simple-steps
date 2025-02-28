@@ -17,7 +17,7 @@ export default function Navbar() {
   return (
     <nav className="p-4 bg-blue-600 text-white flex justify-between items-center shadow-md">
       <Link
-        href={session ? "/Home" : "/"}
+        href={session ? "/home" : "/"}
         className="text-lg font-bold text-white hover:text-gray-300"
       >
         Simple Steps
@@ -26,22 +26,22 @@ export default function Navbar() {
       <div>
         {!session ? (
           <>
-            <Link href="/Login" className="mr-4 text-white hover:text-gray-300">
+            <Link href="/login" className="mr-4 text-white hover:text-gray-300">
               Login
             </Link>
-            <Link href="/Signup" className="text-white hover:text-gray-300">
+            <Link href="/signup" className="text-white hover:text-gray-300">
               Signup
             </Link>
           </>
         ) : (
           <>
-            <Link href="/Home" className="mr-4 text-white hover:text-gray-300">
+            <Link href="/home" className="mr-4 text-white hover:text-gray-300">
               Home
             </Link>
-            <Link href="/Home" className="mr-4 text-white hover:text-gray-300">
+            <Link href="/home" className="mr-4 text-white hover:text-gray-300">
               Empty
             </Link>
-            <Link href="/Profile" className="mr-4 text-white hover:text-gray-300">
+            <Link href="/profile" className="mr-4 text-white hover:text-gray-300">
               Profile
             </Link>
             <button

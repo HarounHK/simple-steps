@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/Home"); 
+      router.replace("/home"); 
     }
   }, [status, router]);
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
             Log In
           </button>
           {error && <div className="bg-red-500 text-white p-2 rounded mt-2">{error}</div>}
-          <Link className="text-sm mt-3 text-right text-black" href="/Signup">
+          <Link className="text-sm mt-3 text-right text-black" href="/signup">
             Dont have an account? <span className="underline">Sign up</span>
           </Link>
         </form>

@@ -11,7 +11,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/Home"); 
+      router.replace("/home"); 
     }
   }, [status, router]);
 
@@ -100,7 +100,7 @@ export default function SignupPage() {
             Sign Up
           </button>
           {error && <div className="bg-red-500 text-white p-2 rounded mt-2">{error}</div>}
-          <Link className="text-sm mt-3 text-right text-black" href="/Login">
+          <Link className="text-sm mt-3 text-right text-black" href="/login">
             Already have an account? <span className="underline">Login</span>
           </Link>
         </form>

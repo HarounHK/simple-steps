@@ -9,13 +9,13 @@ export default function Home() {
       </p>
       <div className="space-x-4">
         <Link
-          href="/Login"
+          href="/login"
           className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
         >
           Log In
         </Link>
         <Link
-          href="/Signup"
+          href="/signup"
           className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
         >
           Sign Up
