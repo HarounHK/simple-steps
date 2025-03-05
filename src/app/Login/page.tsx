@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { ImagesSlider } from "@/components/ImagesSlider";
+import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -12,7 +13,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/home"); 
+      router.replace("/home");
     }
   }, [status, router]);
 
@@ -34,7 +35,7 @@ export default function LoginPage() {
         setError("Invalid Credentials");
         return;
       }
-      router.replace("/Home");
+      router.replace("/home");
     } catch (error) {
       console.log(error);
     }
@@ -42,34 +43,43 @@ export default function LoginPage() {
 
   if (status === "authenticated") return null;
 
+  const images = ["/images/image1.jpg", "/images/image2.jpg", "/images/image3.jpg"];
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">Log In</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Email</label>
-            <input
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
-              type="email"
-              placeholder="Enter your email"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Password</label>
-            <input
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring text-black focus:ring-blue-300"
-              type="password"
-              placeholder="Enter your password"
-            />
-          </div>
-          <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-            Log In
+    <div className="relative w-full h-screen flex items-center justify-center text-white">
+      <ImagesSlider images={images} className="absolute inset-0 w-full h-full object-cover z-0" />
+
+      <div className="absolute inset-0 bg-black/60 z-0"></div>
+
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+        bg-black/70 border border-gray-700 p-8 rounded-lg shadow-lg w-full max-w-md 
+        z-10 backdrop-blur-lg">
+        <h1 className="text-3xl font-bold text-center text-white mb-6">Sign In</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded 
+              focus:outline-none focus:ring focus:ring-[#1F1A5E]"
+            type="email"
+            placeholder="Enter your email"
+          />
+          <input
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded 
+              focus:outline-none focus:ring focus:ring-[#1F1A5E]"
+            type="password"
+            placeholder="Enter your password"
+          />
+          <button
+            className="w-full text-white py-2 rounded transition"
+            style={{ backgroundColor: "#1F1A5E" }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#D7AAFA")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#1F1A5E")}
+          >
+            Sign In
           </button>
-          {error && <div className="bg-red-500 text-white p-2 rounded mt-2">{error}</div>}
-          <Link className="text-sm mt-3 text-right text-black" href="/signup">
+          {error && <div className="bg-red-500 text-white p-2 rounded">{error}</div>}
+          <Link className="text-sm text-center block text-gray-400 hover:text-white" href="/signup">
             Dont have an account? <span className="underline">Sign up</span>
           </Link>
         </form>
