@@ -47,10 +47,12 @@ export default function LoginPage() {
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center text-white">
-      <ImagesSlider images={images} className="absolute inset-0 w-full h-full object-cover z-0" />
-
+      <ImagesSlider images={images} className="absolute inset-0 w-full h-full object-cover z-0">
+        <> </>
+      </ImagesSlider>
+  
       <div className="absolute inset-0 bg-black/60 z-0"></div>
-
+  
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
         bg-black/70 border border-gray-700 p-8 rounded-lg shadow-lg w-full max-w-md 
         z-10 backdrop-blur-lg">
@@ -85,5 +87,5 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
-  );
+  );  
 }

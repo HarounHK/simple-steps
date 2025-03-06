@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 export const ImagesSlider = ({
   images,
@@ -21,43 +21,39 @@ export const ImagesSlider = ({
   direction?: "up" | "down";
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setCurrentIndex((prevIndex) =>
       prevIndex + 1 === images.length ? 0 : prevIndex + 1
     );
-  };
+  }, [images.length]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setCurrentIndex((prevIndex) =>
       prevIndex - 1 < 0 ? images.length - 1 : prevIndex - 1
     );
-  };
+  }, [images.length]);
+
+  const loadImages = useCallback(() => {
+    const loadPromises = images.map(
+      (image) =>
+        new Promise<string>((resolve, reject) => {
+          const img = new Image();
+          img.src = image;
+          img.onload = () => resolve(image);
+          img.onerror = reject;
+        })
+    );
+
+    Promise.all(loadPromises)
+      .then((loaded) => setLoadedImages(loaded))
+      .catch((error) => console.error("Failed to load images", error));
+  }, [images]);
 
   useEffect(() => {
     loadImages();
-  }, []);
-
-  const loadImages = () => {
-    setLoading(true);
-    const loadPromises = images.map((image) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = image;
-        img.onload = () => resolve(image);
-        img.onerror = reject;
-      });
-    });
-
-    Promise.all(loadPromises)
-      .then((loadedImages) => {
-        setLoadedImages(loadedImages as string[]);
-        setLoading(false);
-      })
-      .catch((error) => console.error("Failed to load images", error));
-  };
+  }, [loadImages]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -70,7 +66,7 @@ export const ImagesSlider = ({
 
     window.addEventListener("keydown", handleKeyDown);
 
-    let interval: any;
+    let interval: NodeJS.Timeout | null = null;
     if (autoplay) {
       interval = setInterval(() => {
         handleNext();
@@ -79,51 +75,29 @@ export const ImagesSlider = ({
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [autoplay, handleNext, handlePrevious]);
 
   const slideVariants = {
-    initial: {
-      scale: 0,
-      opacity: 0,
-      rotateX: 45,
-    },
+    initial: { scale: 0, opacity: 0, rotateX: 45 },
     visible: {
       scale: 1,
       rotateX: 0,
       opacity: 1,
-      transition: {
-        duration: 0.5,
-        ease: [0.645, 0.045, 0.355, 1.0],
-      },
+      transition: { duration: 0.5, ease: [0.645, 0.045, 0.355, 1.0] },
     },
-    upExit: {
-      opacity: 1,
-      y: "-150%",
-      transition: {
-        duration: 1,
-      },
-    },
-    downExit: {
-      opacity: 1,
-      y: "150%",
-      transition: {
-        duration: 1,
-      },
-    },
+    upExit: { opacity: 1, y: "-150%", transition: { duration: 1 } },
+    downExit: { opacity: 1, y: "150%", transition: { duration: 1 } },
   };
-
-  const areImagesLoaded = loadedImages.length > 0;
 
   return (
     <div className={`overflow-hidden h-full w-full relative flex items-center justify-center ${className}`}>
-      {areImagesLoaded && children}
-      {areImagesLoaded && overlay && (
+      {loadedImages.length > 0 && children}
+      {loadedImages.length > 0 && overlay && (
         <div className={`absolute inset-0 bg-black/60 z-40 ${overlayClassName}`} />
       )}
-
-      {areImagesLoaded && (
+      {loadedImages.length > 0 && (
         <AnimatePresence>
           <motion.img
             key={currentIndex}

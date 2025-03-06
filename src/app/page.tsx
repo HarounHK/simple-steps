@@ -21,7 +21,10 @@ export default function LandingPage() {
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center text-white">
-      <ImagesSlider images={["/images/image1.jpg", "/images/image2.jpg", "/images/image3.jpg"]} className="absolute inset-0 w-full h-full object-cover z-0" />
+      <ImagesSlider images={["/images/image1.jpg", "/images/image2.jpg", "/images/image3.jpg"]} className="absolute inset-0 w-full h-full object-cover z-0">
+        <> </>
+      </ImagesSlider>
+      
       <div className="absolute inset-0 bg-black/40 z-0"></div>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10">

@@ -10,6 +10,11 @@ export default function SignupPage() {
   const { status } = useSession();
   const router = useRouter();
 
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
   useEffect(() => {
     if (status === "authenticated") {
       router.replace("/home"); // Redirect logged-in users away from signup
@@ -17,11 +22,6 @@ export default function SignupPage() {
   }, [status, router]);
 
   if (status === "authenticated") return null;
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,7 +61,10 @@ export default function SignupPage() {
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center text-white">
-      <ImagesSlider images={["/images/image1.jpg", "/images/image2.jpg", "/images/image3.jpg"]} className="absolute inset-0 w-full h-full object-cover z-0" />
+      <ImagesSlider images={["/images/image1.jpg", "/images/image2.jpg", "/images/image3.jpg"]} className="absolute inset-0 w-full h-full object-cover z-0">
+        <> </>
+      </ImagesSlider>
+      
       <div className="absolute inset-0 bg-black/60 z-0"></div>
 
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
