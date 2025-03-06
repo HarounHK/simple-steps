@@ -1,4 +1,5 @@
-import {AuthProvider} from "../app/providers"
+import { AuthProvider } from "../app/providers";
+import Navbar from "../components/Navbar";
 import "../styles/globals.css";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -7,12 +8,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <title>Simple Steps</title>
       </head>
-      <body>
-        <main>
-          <AuthProvider>
-          {children}
-          </AuthProvider>
-          </main>
+      <body className="bg-black text-white">
+        <AuthProvider>
+          <Navbar />
+          <main className="text-white">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
