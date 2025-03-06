@@ -5,8 +5,10 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  if (status === "loading") return null; 
 
   const handleLogout = async () => {
     signOut({ redirect: false }).then(() => {
@@ -15,44 +17,44 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="p-4 bg-blue-600 text-white flex justify-between items-center shadow-md">
+    <nav className="absolute top-0 left-0 w-full p-4 bg-gradient-to-b from-black/80 to-transparent text-white flex justify-between items-center z-50">
       <Link
-        href={session ? "/Home" : "/"}
-        className="text-lg font-bold text-white hover:text-gray-300"
+        href={session ? "/home" : "/"} 
+        className="text-3xl font-extrabold tracking-wide"
+        style={{ color: "#1F1A5E" }}
       >
-        Simple Steps
+        SIMPLE STEPS
       </Link>
 
-      <div>
-        {!session ? (
-          <>
-            <Link href="/Login" className="mr-4 text-white hover:text-gray-300">
-              Login
-            </Link>
-            <Link href="/Signup" className="text-white hover:text-gray-300">
-              Signup
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link href="/Home" className="mr-4 text-white hover:text-gray-300">
-              Home
-            </Link>
-            <Link href="/Home" className="mr-4 text-white hover:text-gray-300">
-              Empty
-            </Link>
-            <Link href="/Profile" className="mr-4 text-white hover:text-gray-300">
-              Profile
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
-            >
-              Logout
-            </button>
-          </>
-        )}
-      </div>
+      {session ? (
+        <div className="flex gap-6">
+          <Link href="/home" className="hover:text-[#B580E4] transition">
+            Home
+          </Link>
+          <Link href="/profile" className="hover:text-[#B580E4] transition">
+            Profile
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-1 rounded transition text-white"
+            style={{ backgroundColor: "#1F1A5E" }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#B580E4")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#1F1A5E")}
+          >
+            Sign Out
+          </button>
+        </div>
+      ) : (
+        <Link
+          href="/login"
+          className="px-4 py-1 rounded transition text-white"
+          style={{ backgroundColor: "#1F1A5E" }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#B580E4")}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#1F1A5E")}
+        >
+          Sign In
+        </Link>
+      )}
     </nav>
   );
 }

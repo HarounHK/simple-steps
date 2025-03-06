@@ -10,7 +10,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/Login"); // Redirect to Login if user isnt authenticated
+      router.push("/login"); // Redirect to Login if user isnt authenticated
     }
   }, [status, router]);
 

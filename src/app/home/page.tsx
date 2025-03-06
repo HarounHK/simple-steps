@@ -10,7 +10,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/Login"); 
+      router.push("/login");
     }
   }, [status, router]);
 
@@ -18,9 +18,13 @@ export default function HomePage() {
   if (!session) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full">
-      <h1 className="text-3xl font-bold text-blue-600 mb-4">Welcome, {session.user?.name}!</h1>
-      <p className="text-lg text-gray-700">This is your home page.</p>
+    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#D7AAFA] text-white">
+      <h1 className="text-4xl font-bold text-[#1F1A5E] mb-4">
+        Welcome, {session.user?.name}!
+      </h1>
+      <p className="text-lg text-gray-900">
+        Homepage.
+      </p>
     </div>
   );
 }

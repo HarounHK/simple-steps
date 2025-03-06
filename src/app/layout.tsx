@@ -8,10 +8,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <title>Simple Steps</title>
       </head>
-      <body className="bg-gray-100">
+      <body className="bg-black text-white">
         <AuthProvider>
           <Navbar />
-          <main>{children}</main>
+          <main className="text-white">{children}</main>
         </AuthProvider>
       </body>
     </html>
