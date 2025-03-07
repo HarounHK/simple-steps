@@ -18,9 +18,9 @@ export const authOptions = {
         const { email, password } = credentials;
 
         try {
-          await connectMongoDB(); // This makes sure MongoDB is connectef
+          await connectMongoDB(); // This makes sure MongoDB is connected
 
-          //Finds the user in the database using Email
+          // Finds the user in the database using Email
           const existingUser = await User.findOne({ email });
           if (!existingUser) {
             console.error("User was not found");

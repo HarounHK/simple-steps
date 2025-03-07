@@ -14,7 +14,7 @@ export async function POST(request) {
             return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
         }
 
-        // Ensures the user ID is available (User needs to be recognised for their data to be pushd into DB)
+        // Ensures the userID is available (User needs to be recognised for their data to be pushed into DB)
         if (!session.user.id) {
             return NextResponse.json({ message: "User ID is missing, Cant identify user" }, { status: 500 });
         }
