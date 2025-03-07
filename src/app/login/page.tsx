@@ -14,8 +14,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === "authenticated") {
       router.replace("/home");
+    } else if (status === "unauthenticated") {
+      router.replace("/login"); 
     }
-  }, [status, router]);
+  }, [status, router]);  
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
