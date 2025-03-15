@@ -7,9 +7,10 @@ import { authOptions } from "../auth/[...nextauth]/authOptions";
 // Handles the GET request to fetch glucose readings
 export async function GET(request) {
     try {
-        const session = await getServerSession({ req: request, ...authOptions });
+        await connectMongoDB();
 
-        // Response if session isnt found
+        // Retrieves the session
+        const session = await getServerSession({ req: request, ...authOptions });
         if (!session || !session.user) {
             return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
         }
@@ -20,8 +21,6 @@ export async function GET(request) {
         const limit = parseInt(searchParams.get("limit") || "5", 10);
         const skip = (page - 1) * limit;
 
-        await connectMongoDB();
-
         // Retrieves glucose readings only for the specific logged-in user sorted by latest 
         const readings = await Glucose.find({ userId: session.user.id })
             .sort({ timeOfMeasurement: -1 })
@@ -31,16 +30,16 @@ export async function GET(request) {
         return NextResponse.json({ readings }, { status: 200 });
 
     } catch {
-        return NextResponse.json({ message: "Error, Failed to fetch readings" }, { status: 500 });
+        return NextResponse.json({ message: "Error, Failed to fetch glucose readings" }, { status: 500 });
     }
 }
 
 // Handles the POST request to save a new glucose reading
 export async function POST(request) {
     try {
-        const session = await getServerSession({ req: request, ...authOptions });
+        await connectMongoDB();
 
-        // Response if session isnt found
+        const session = await getServerSession({ req: request, ...authOptions });
         if (!session || !session.user) {
             return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
         }
@@ -53,11 +52,9 @@ export async function POST(request) {
         // Parses the JSON data from request body
         const { glucoseLevel, timeOfMeasurement, mealContext, notes } = await request.json();
 
-        await connectMongoDB();
-
         // Validates that all required fields are not empty before pushing to the DB
         if (!glucoseLevel || !timeOfMeasurement || !mealContext) {
-            return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
+            return NextResponse.json({ message: "Missing required input fields" }, { status: 400 });
         }
 
         // Pushing a new glucose entry into the DB
@@ -73,6 +70,7 @@ export async function POST(request) {
 
         // Saves the data to MongoDB
         await newGlucose.save();
+
         return NextResponse.json({ message: "Glucose reading saved successfully" }, { status: 201 });
 
     } catch {

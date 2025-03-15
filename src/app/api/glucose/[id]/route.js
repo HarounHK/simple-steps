@@ -9,27 +9,27 @@ export async function PUT(request, { params }) {
     try {
         await connectMongoDB();
 
+        // Retrieves the session
         const session = await getServerSession({ req: request, ...authOptions });
-
-        // Response if session isn't found
         if (!session || !session.user) {
             return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
         }
 
         // Ensures the userID is available 
         if (!session.user.id) {
-            return NextResponse.json({ message: "User ID is missing, Can't identify user" }, { status: 500 });
+            return NextResponse.json({ message: "User ID is missing, Cant identify user" }, { status: 500 });
         }
 
-        //Extracting thw glucose ID from params
+        // Extracting the glucose ID from params
         const { id } = params;
         if (!id) {
             return NextResponse.json({ message: "Missing glucose ID" }, { status: 400 });
         }
 
+        // Parses the JSON data from request body
         const { glucoseLevel, timeOfMeasurement, mealContext, notes } = await request.json();
 
-        // Validates that all required fields are not empty
+        // Validates that all required fields are not empty before pushing to the DB
         if (!glucoseLevel || !timeOfMeasurement || !mealContext) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
         }
@@ -46,12 +46,13 @@ export async function PUT(request, { params }) {
             { new: true }
         );
 
-        // Response if the glucose entry isnot found
+        // Response if the glucose entry isn't found
         if (!updatedGlucose) {
             return NextResponse.json({ message: "Glucose reading not found" }, { status: 404 });
         }
 
         return NextResponse.json({ message: "Glucose reading updated successfully", updatedGlucose }, { status: 200 });
+    
     } catch {
         return NextResponse.json({ message: "Failed to update glucose reading" }, { status: 500 });
     }
