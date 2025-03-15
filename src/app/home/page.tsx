@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
-// Defines the structure of a glucose entry retrieved from  database
+// Defines the structure of a glucose entry retrieved from DB
 type GlucoseEntry = {
   _id: string;
   glucoseLevel: number;
@@ -59,9 +59,9 @@ export default function HomePage() {
       if (response.ok && data.readings) {
         setGlucoseReadings(
           data.readings.sort((a: GlucoseEntry, b: GlucoseEntry) => {
-            const dateA = new Date(a.timeOfMeasurement).getTime(); // Parse as Date and get timestamp
-            const dateB = new Date(b.timeOfMeasurement).getTime(); // Parse as Date and get timestamp
-            return dateB - dateA; // Sort in descending order
+            const dateA = new Date(a.timeOfMeasurement).getTime(); 
+            const dateB = new Date(b.timeOfMeasurement).getTime(); 
+            return dateB - dateA;
           })
         );
       }
