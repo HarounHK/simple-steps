@@ -5,27 +5,6 @@ import remarkGfm from "remark-gfm"
 import { cn } from "@/lib/utils"
 import { CopyButton } from "@/components/ui/copy-button"
 
-type HtmlTag =
-  | "h1"
-  | "h2"
-  | "h3"
-  | "h4"
-  | "h5"
-  | "strong"
-  | "a"
-  | "blockquote"
-  | "code"
-  | "pre"
-  | "ol"
-  | "ul"
-  | "li"
-  | "table"
-  | "th"
-  | "td"
-  | "tr"
-  | "p"
-  | "hr"
-
 interface MarkdownRendererProps {
   children: string
 }
@@ -141,7 +120,7 @@ function collectAllText(node: ReactNode): string {
   return ""
 }
 
-// We only want to override these HTML tags
+// Custom override handlers
 const OVERRIDES: Partial<Components> = {
   h1: withClass("h1", "text-2xl font-semibold"),
   h2: withClass("h2", "font-semibold text-xl"),
@@ -189,13 +168,18 @@ const OVERRIDES: Partial<Components> = {
   hr: withClass("hr", "border-foreground/20"),
 }
 
-function withClass<Tag extends HtmlTag>(Tag: Tag, classes: string) {
-  // For each HTML tag, we map to that tag's native props
-  const Comp: React.FC<JSX.IntrinsicElements[Tag]> = (props) => (
-    <Tag className={classes} {...props} />
-  )
-  Comp.displayName = `WithClass(${Tag})`
-  return Comp
+function withClass<Tag extends keyof JSX.IntrinsicElements>(
+  tag: Tag,
+  classes: string
+) {
+  const Component = (props: JSX.IntrinsicElements[Tag]) => {
+    return React.createElement(tag, {
+      className: classes,
+      ...props,
+    })
+  }
+  Component.displayName = `WithClass(${tag})`
+  return Component
 }
 
 export default MarkdownRenderer
