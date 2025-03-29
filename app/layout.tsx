@@ -1,6 +1,6 @@
 import { AuthProvider } from "../app/providers";
-import Navbar from "../components/Navbar";
-import "../styles/globals.css";
+import Navbar from "../src/components/Navbar"
+import "../src/styles/globals.css"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
