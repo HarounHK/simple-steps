@@ -108,16 +108,29 @@ export async function GET(request: Request) {
 
     const searchData = await searchResponse.json();
 
-    console.log("FatSecret response data:", JSON.stringify(searchData));
-    
-    const foodItems = searchData.foods?.food;
-    
-    if (!foodItems || (Array.isArray(foodItems) && foodItems.length === 0)) {
+    const rawItems = searchData.foods?.food;
+
+    if (!rawItems) {
       return NextResponse.json({ error: "No results found" }, { status: 404 });
     }
+    
+    // Normalize: always return an array
+    const foodItems: FoodItem[] = Array.isArray(rawItems) ? rawItems : [rawItems];
+    
+    if (foodItems.length === 0) {
+      return NextResponse.json({ error: "No results found" }, { status: 404 });
+    }
+    
+    const topFoods = foodItems.slice(0, 3);
+    
+    // const foodItems = searchData.foods?.food;
+    
+    // if (!foodItems || (Array.isArray(foodItems) && foodItems.length === 0)) {
+    //   return NextResponse.json({ error: "No results found" }, { status: 404 });
+    // }
 
     // Limit results to top 3 items
-    const topFoods: FoodItem[] = ([] as FoodItem[]).concat(foodItems).slice(0, 3);
+    // const topFoods: FoodItem[] = ([] as FoodItem[]).concat(foodItems).slice(0, 3);
 
     // Fetch detailed data and fix to per 100g
     const detailedFoods = await Promise.all(topFoods.map(fetchFood));
