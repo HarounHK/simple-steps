@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react"
-
 import { recordAudio } from "@/lib/audio-utils"
 
 interface UseAudioRecordingOptions {
@@ -16,13 +15,14 @@ export function useAudioRecording({
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null)
-  const activeRecordingRef = useRef<any>(null)
+
+  // Make the ref optional to allow null
+  const activeRecordingRef = useRef<Promise<Blob> | null>(null)
 
   useEffect(() => {
     const checkSpeechSupport = async () => {
-      const hasMediaDevices = !!(
-        navigator.mediaDevices && navigator.mediaDevices.getUserMedia
-      )
+      const hasMediaDevices =
+        !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia
       setIsSpeechSupported(hasMediaDevices && !!transcribeAudio)
     }
 
@@ -32,24 +32,27 @@ export function useAudioRecording({
   const stopRecording = async () => {
     setIsRecording(false)
     setIsTranscribing(true)
+
     try {
-      // First stop the recording to get the final blob
       recordAudio.stop()
-      // Wait for the recording promise to resolve with the final blob
+
       const recording = await activeRecordingRef.current
-      if (transcribeAudio) {
+
+      if (recording && transcribeAudio) {
         const text = await transcribeAudio(recording)
         onTranscriptionComplete?.(text)
       }
     } catch (error) {
-      console.error("Error transcribing audio:", error)
+      console.error("Error during transcription:", error)
     } finally {
       setIsTranscribing(false)
       setIsListening(false)
+
       if (audioStream) {
         audioStream.getTracks().forEach((track) => track.stop())
         setAudioStream(null)
       }
+
       activeRecordingRef.current = null
     }
   }
@@ -59,18 +62,16 @@ export function useAudioRecording({
       try {
         setIsListening(true)
         setIsRecording(true)
-        // Get audio stream first
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        })
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         setAudioStream(stream)
 
-        // Start recording with the stream
         activeRecordingRef.current = recordAudio(stream)
       } catch (error) {
-        console.error("Error recording audio:", error)
+        console.error("Error starting recording:", error)
         setIsListening(false)
         setIsRecording(false)
+
         if (audioStream) {
           audioStream.getTracks().forEach((track) => track.stop())
           setAudioStream(null)

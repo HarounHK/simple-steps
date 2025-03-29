@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useCallback } from "react";
 import { calculateDailyCalories } from "./utils/calculateDailyCalories";
 import SearchModal from "./components/searchModal";
 import AddFoodModal from "./components/addFoodModal";
@@ -58,13 +58,8 @@ export default function NutritionPage() {
   const [editFoodName, setEditFoodName] = useState("");
   const [editMealType, setEditMealType] = useState<MealType>("Breakfast");
 
-  // Load user data
-  useEffect(() => {
-    loadDiary();
-  }, [currentDate]);
-
   // Fetch the user profile and load diary entries
-  async function loadDiary() {
+  const loadDiary = useCallback(async () => {
     try {
       // Loading User Profile
       const profileResponse = await fetch("/api/profile");
@@ -91,7 +86,12 @@ export default function NutritionPage() {
       console.error("Error loading diary data:", error);
       setErrorMessage("Couldn’t load your diary right now. Please try again later.");
     }
-  }
+  }, [currentDate]);
+
+    // Load user data
+    useEffect(() => {
+      loadDiary();
+    }, [loadDiary]);
 
   // Shift date by days
   function handleChangeDate(days: number) {
