@@ -15,7 +15,6 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
         }
 
-        // Ensures the userID is available 
         if (!session.user.id) {
             return NextResponse.json({ message: "User ID is missing, Cant identify user" }, { status: 500 });
         }
