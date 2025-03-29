@@ -31,6 +31,9 @@ export default function Navbar() {
           <Link href="/home" className="hover:text-[#B580E4] transition">
             Home
           </Link>
+          <Link href="/chatbot" className="hover:text-[#B580E4] transition">
+            Chatbot
+          </Link>
           <Link href="/nutrition" className="hover:text-[#B580E4] transition">
             Nutrition
           </Link>
