@@ -121,20 +121,46 @@ export default function NutritionPage() {
   });
 
   // Handles Food Search
+  // async function findFood() {
+  //   if (!searchQuery) return;
+
+  //   try {
+  //     const response = await fetch(`/api/nutrition?query=${encodeURIComponent(searchQuery)}`);
+  //     const data = await response.json();
+
+  //     if (response.ok){
+  //       setSearchResults(data.slice(0, 3));
+  //       setErrorMessage("");
+  //     }
+
+  //   } catch (error) {
+  //     console.error("Error searching for food:", error);
+  //     setErrorMessage("Couldn’t search for foods right now. Please try again.");
+  //   }
+  // }
+
+  // Handles Food Search
   async function findFood() {
     if (!searchQuery) return;
 
     try {
+      console.log(" Searching for:", searchQuery);
+
       const response = await fetch(`/api/nutrition?query=${encodeURIComponent(searchQuery)}`);
       const data = await response.json();
+
+      console.log("Response status:", response.status); 
+      console.log("Response data:", data);              
 
       if (response.ok){
         setSearchResults(data.slice(0, 3));
         setErrorMessage("");
+      } else {
+        setErrorMessage(data.error || "Unknown error from API");
       }
 
     } catch (error) {
-      console.error("Error searching for food:", error);
+      console.error(" Error searching for food:", error);
       setErrorMessage("Couldn’t search for foods right now. Please try again.");
     }
   }
