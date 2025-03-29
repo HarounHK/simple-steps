@@ -16,8 +16,10 @@ export function ChatBot() {
   const [input, setInput] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
 
-  // Submits user input and fetches AI reply
-  const handleSubmit = async () => {
+  // Submita user input and fetch AI reply
+  const handleSubmit = async (event?: { preventDefault?: () => void }) => {
+    if (event?.preventDefault) event.preventDefault()
+
     if (!input.trim()) return
 
     const userMessage = {
@@ -61,7 +63,6 @@ export function ChatBot() {
     setIsGenerating(false)
   }
 
-  // Autofill input when clicking a suggestion
   const handleSuggestionClick = (text: string) => {
     setInput(text)
   }

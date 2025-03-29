@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY!,
 });
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { message } = body;
+    const { message }: { message: string } = body;
 
     const hour = new Date().getHours();
     let dayTime = '';
@@ -30,7 +30,7 @@ export async function POST(request) {
       ],
     });
 
-    const aiMessage = response.choices[0].message.content;
+    const aiMessage = response.choices[0].message?.content || 'No response.';
     return NextResponse.json({ reply: aiMessage });
   } catch (error) {
     console.error('Chatbot api error:', error);
