@@ -107,9 +107,12 @@ export async function GET(request: Request) {
     }
 
     const searchData = await searchResponse.json();
-    const foodItems = searchData.foods?.food;
 
-    if (!foodItems) {
+    console.log("FatSecret response data:", JSON.stringify(searchData));
+    
+    const foodItems = searchData.foods?.food;
+    
+    if (!foodItems || (Array.isArray(foodItems) && foodItems.length === 0)) {
       return NextResponse.json({ error: "No results found" }, { status: 404 });
     }
 
