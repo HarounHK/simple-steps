@@ -12,6 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
 
     // Requesting access token from Dexcom using the authorization code
+    // const tokenResponse = await axios.post('https://api.dexcom.com/v2/oauth2/token',
     const tokenResponse = await axios.post('https://sandbox-api.dexcom.com/v2/oauth2/token', 
       new URLSearchParams({
         client_id: process.env.DEXCOM_CLIENT_ID!,
@@ -32,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ]);
 
     // Redirecting user to the data retrieval endpoint after successful authentication
-    res.writeHead(302, { Location: "/api/dexcom/data" });
+    res.writeHead(302, { Location: "/home" });
     return res.end();
   } catch (error: unknown) { 
     const axiosError = error as AxiosError;

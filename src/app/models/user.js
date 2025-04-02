@@ -12,6 +12,7 @@ const userSchema = new Schema(
     diabetesType: {type: String,default: "",},
     targetWeight: {type: Number,default: 0,},
     activityLevel: {type: String,enum: ["Not Very", "Lightly Active", "Active", "Very Active"],required: true,},
+    trackingMode: {type: String,enum: ["manual", "dexcom"],default: "manual"},
   },
   { timestamps: true }
 );

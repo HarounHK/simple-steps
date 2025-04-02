@@ -3,36 +3,44 @@ import { connectMongoDB } from "../../lib/mongodb";
 import Glucose from "../../models/glucose";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/authOptions";
+import mongoose from "mongoose";
 
 // Handles the GET request to fetch glucose readings
 export async function GET(request) {
     try {
-        await connectMongoDB();
-
-        // Retrieves the session
-        const session = await getServerSession({ req: request, ...authOptions });
-        if (!session || !session.user) {
-            return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
-        }
-
-        // Parses the query params for pagination
-        const { searchParams } = new URL(request.url);
-        const page = parseInt(searchParams.get("page") || "1", 10);
-        const limit = parseInt(searchParams.get("limit") || "5", 10);
-        const skip = (page - 1) * limit;
-
-        // Retrieves glucose readings only for the specific logged-in user sorted by latest 
-        const readings = await Glucose.find({ userId: session.user.id })
-            .sort({ timeOfMeasurement: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        return NextResponse.json({ readings }, { status: 200 });
-
-    } catch {
-        return NextResponse.json({ message: "Error, Failed to fetch glucose readings" }, { status: 500 });
+      await connectMongoDB();
+  
+      // @ts-expect-error ignore
+      const session = await getServerSession({ req: request, ...authOptions });
+      if (!session?.user?.id) {
+        return NextResponse.json({ message: "User is not authorized" }, { status: 401 });
+      }
+  
+      // Convert the session user.id to a Mongo onjectID
+      const userId = new mongoose.Types.ObjectId(session.user.id);
+  
+      // Parses the query params for pagination
+      const { searchParams } = new URL(request.url);
+      const page = parseInt(searchParams.get("page") || "1", 10);
+      const limit = parseInt(searchParams.get("limit") || "5", 10);
+      const skip = (page - 1) * limit;
+  
+      // Retrieve glucose readings only for this user, sorted by latest
+      const readings = await Glucose.find({ userId })
+        .sort({ timeOfMeasurement: -1 })
+        .skip(skip)
+        .limit(limit);
+  
+      return NextResponse.json({ readings }, { status: 200 });
+  
+    } catch (error) {
+      console.error("glucose api error:", error);
+      return NextResponse.json(
+        { message: "Error, Failed to fetch glucose readings" },
+        { status: 500 }
+      );
     }
-}
+  }
 
 // Handles the POST request to save a new glucose reading
 export async function POST(request) {

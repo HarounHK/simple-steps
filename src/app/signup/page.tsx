@@ -24,6 +24,7 @@ export default function SignupPage() {
   const [diabetesType, setDiabetesType] = useState("");
   const [targetWeight, setTargetWeight] = useState(0);
   const [activityLevel, setActivityLevel] = useState("Not Very");
+  const [trackingMode, setTrackingMode] = useState("manual");
 
   // Holds error messages
   const [error, setError] = useState("");
@@ -218,6 +219,16 @@ export default function SignupPage() {
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Activity Level
               </label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Glucose Tracking Mode
+              </label>
+              <select
+                onChange={(e) => setTrackingMode(e.target.value)}
+                value={trackingMode}
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-4">
+                <option value="manual">Manual Entry</option>
+                <option value="dexcom">Dexcom Device</option>
+              </select>
               <select
                 onChange={(e) => setActivityLevel(e.target.value)}
                 value={activityLevel}

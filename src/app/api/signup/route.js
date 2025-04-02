@@ -16,6 +16,7 @@ export async function POST(request) {
       diabetesType,
       targetWeight,
       activityLevel,
+      trackingMode,
     } = await request.json();
 
     const hashedPassword = await bcrypt.hash(password, 5);
@@ -33,6 +34,7 @@ export async function POST(request) {
       diabetesType,
       targetWeight,
       activityLevel,
+      trackingMode,
     });
 
     return NextResponse.json({ message: "User registered successfully" },{ status: 201 });

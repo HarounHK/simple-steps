@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
   diabetesType: string;
   targetWeight: number;
   activityLevel: string;
+  trackingMode: string;
 }
 
 export default function ProfilePage() {
@@ -144,6 +145,12 @@ export default function ProfilePage() {
               label="Activity Level"
               fieldName="activityLevel"
               value={profileData.activityLevel}
+              onUpdate={updateField}
+            />
+            <ProfileFieldRow
+              label="Tracking Mode"
+              fieldName="trackingMode"
+              value={profileData.trackingMode}
               onUpdate={updateField}
             />
           </div>
