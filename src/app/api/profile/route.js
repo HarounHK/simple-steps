@@ -55,7 +55,7 @@ export async function PUT(request) {
     }
 
     // Parses the JSON data from request body
-    const { sex, age, height, weight, diabetesType, targetWeight, activityLevel } = await request.json();
+    const { sex, age, height, weight, diabetesType, targetWeight, activityLevel, trackingMode } = await request.json();
 
     // Updates the existing user entry in the DB
     const updatedUser = await User.findByIdAndUpdate(
@@ -68,6 +68,7 @@ export async function PUT(request) {
         diabetesType,
         targetWeight,
         activityLevel,
+        trackingMode,
       },
       { new: true }
     );

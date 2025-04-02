@@ -15,6 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       console.log("Refreshing access token...");
 
+      // const refreshResponse = await axios.post('https://api.dexcom.com/v2/oauth2/token',
       const refreshResponse = await axios.post('https://sandbox-api.dexcom.com/v2/oauth2/token', 
         new URLSearchParams({
           client_id: process.env.DEXCOM_CLIENT_ID!,
@@ -53,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const startDate = formatDateForDexcom(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)); // previous7 days
     const endDate = formatDateForDexcom(now); 
 
+    // const response = await axios.get(`https://api.dexcom.com/v2/users/self/egvs?startDate=${startDate}&endDate=${endDate}`, {
     const response = await axios.get(`https://sandbox-api.dexcom.com/v2/users/self/egvs?startDate=${startDate}&endDate=${endDate}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
