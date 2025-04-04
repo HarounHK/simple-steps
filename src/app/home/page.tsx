@@ -14,7 +14,7 @@ type GlucoseEntry = {
 };
 
 export default function HomePage() {
-  // Retrieves the authenticated session and handles authentication 
+  // Retrieves the authenticated session and handles authentication
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -52,16 +52,19 @@ export default function HomePage() {
       try {
         const profileResponse = await fetch("/api/profile");
         const profileData = await profileResponse.json();
+
         const mode = profileData.user.trackingMode || "manual";
         setTrackingMode(mode);
 
         if (mode === "dexcom") {
-          const dexcomResponse = await fetch("/api/dexcom/status");
+          const dexcomResponse = await fetch("/api/dexcom/status", {
+            credentials: "include",
+          });
           const dexcomData = await dexcomResponse.json();
           setDexcomAuthorized(dexcomData.authorized);
         }
-      } catch {
-        console.error("Error checking user tracking mode or Dexcom auth");
+      } catch (error) {
+        console.error("error:", error);
       } finally {
         setLoading(false);
       }
@@ -75,11 +78,7 @@ export default function HomePage() {
   // Fetches glucose readings when page loads
   useEffect(() => {
     if (!session) return;
-
-    if (
-      (trackingMode === "manual") ||
-      (trackingMode === "dexcom" && dexcomAuthorized)
-    ) {
+    if (trackingMode === "manual" || (trackingMode === "dexcom" && dexcomAuthorized)) {
       fetchGlucoseReadings(currentPage);
     }
   }, [session, currentPage, trackingMode, dexcomAuthorized]);
@@ -94,43 +93,42 @@ export default function HomePage() {
       if (response.ok && data.readings) {
         setGlucoseReadings(
           data.readings.sort((a: GlucoseEntry, b: GlucoseEntry) => {
-            const dateA = new Date(a.timeOfMeasurement).getTime(); 
-            const dateB = new Date(b.timeOfMeasurement).getTime(); 
+            const dateA = new Date(a.timeOfMeasurement).getTime();
+            const dateB = new Date(b.timeOfMeasurement).getTime();
             return dateB - dateA;
           })
         );
       }
-    } catch {
+    } catch (error) {
+      console.log("error:", error);
       setGlucoseReadings([]);
     }
   };
 
   // Triggers Dexcom simulation every 5 minutes
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (session && trackingMode === "dexcom" && dexcomAuthorized) {
-
-      interval = setInterval(async () => {
-        console.log("[HomePage] Calling /api/dexcom/simulate...");
-        try {
-          const simResponse = await fetch("/api/dexcom/simulate");
-          const data = await simResponse.json();
-          console.log("dexcomsimulation response:", data);
-          
-          fetchGlucoseReadings(currentPage);
-        } catch (error) {
-          console.error("[HomePage error calling api:", error);
-        }
-      }, 90 * 60 * 1000); // 5 minutes
-    } else {
-      console.log("dexcom not authorized");
+    if (!(session && trackingMode === "dexcom" && dexcomAuthorized)) {
+      return;
     }
 
+    const interval = setInterval(() => {
+      fetch("/api/dexcom/simulate", {
+        credentials: "include",
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Dexcom simm response:", data);
+          fetchGlucoseReadings(currentPage);
+        })
+        .catch((error) => {
+          console.error("error:", error);
+        });
+    }, 5 * 60 * 1000);
+
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(interval);
     };
-  }, [session, trackingMode, dexcomAuthorized, currentPage]);
+  }, [session?.user?.email, trackingMode, dexcomAuthorized]);
 
   // Handles form submission for adding a new glucose reading
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -150,14 +148,18 @@ export default function HomePage() {
         body: JSON.stringify(glucoseData),
       });
 
+      const result = await response.json();
+      console.log("submit response:", result);
+
       if (response.ok) {
         setMessage("Glucose reading saved successfully");
-        resetForm(); // Clears the form after submission
-        fetchGlucoseReadings(1); // Reloads to show the latest data
+        resetForm();
+        fetchGlucoseReadings(1);
       } else {
         setMessage("Failed to save the glucose reading");
       }
-    } catch {
+    } catch (error) {
+      console.log("error:", error);
       setMessage("Error saving data");
     }
   };
@@ -190,16 +192,19 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
       });
+      const result = await response.json();
+      console.log("update response", result);
 
       if (response.ok) {
         setMessage("Glucose reading updated successfully");
-        resetForm(); // Resets the form after update
-        setupdatingID(null); // Stops the editing mode
-        fetchGlucoseReadings(currentPage); // Reloads the page with updated data
+        resetForm();
+        setupdatingID(null);
+        fetchGlucoseReadings(currentPage);
       } else {
         setMessage("Failed to update glucose reading");
       }
-    } catch {
+    } catch (error) {
+      console.log("error:", error);
       setMessage("Error updating data");
     }
   };
@@ -212,14 +217,16 @@ export default function HomePage() {
     setNotes("");
   };
 
-  if (loading) return null;
+  if (loading) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#D7AAFA] text-white">
-      
-      {/* Show form only for manual users */}
+      <h2 className="text-lg mb-2">[HomePage] Debugging: trackingMode={trackingMode}, dexcomAuthorized={dexcomAuthorized.toString()}</h2>
+
       {trackingMode === "manual" && (
-        <div className={`bg-white p-6 rounded-lg shadow-md mt-6 w-full max-w-md`}>
+        <div className="bg-white p-6 rounded-lg shadow-md mt-6 w-full max-w-md">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             {updatingID ? "Update Glucose Reading" : "Add Glucose Reading"}
           </h2>
@@ -265,7 +272,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* If user is using Dexcom and not yet authorized, show button */}
       {trackingMode === "dexcom" && !dexcomAuthorized ? (
         <div className="mt-6">
           <button
@@ -277,7 +283,6 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      {/* Table (Only showing if manual OR dexcom is authorized) */}
       {(trackingMode === "manual" || (trackingMode === "dexcom" && dexcomAuthorized)) && (
         <div className="bg-white p-6 rounded-lg shadow-md mt-6 w-full max-w-2xl">
           <>
@@ -310,7 +315,6 @@ export default function HomePage() {
               </tbody>
             </table>
 
-            {/* Pagination */}
             <div className="flex justify-center mt-4">
               {[1, 2, 3].map((num) => (
                 <button
