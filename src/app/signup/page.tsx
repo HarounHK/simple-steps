@@ -7,7 +7,6 @@ import Link from "next/link";
 import { ImagesSlider } from "@/components/ImagesSlider";
 
 export default function SignupPage() {
-
   // Retrieves authenticated session 
   const { status } = useSession();
   const router = useRouter();
@@ -90,6 +89,7 @@ export default function SignupPage() {
           diabetesType,
           targetWeight,
           activityLevel,
+          trackingMode // ✅ make sure trackingMode is sent
         }),
       });
 
@@ -173,6 +173,7 @@ export default function SignupPage() {
                 <option value="female">Female</option>
                 <option value="other">Other / Prefer not</option>
               </select>
+
               <label className="block text-sm font-medium text-gray-300 mb-1">Age</label>
               <input
                 onChange={(e) => setAge(parseInt(e.target.value) || 0)}
@@ -180,6 +181,7 @@ export default function SignupPage() {
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-2"
                 type="number"
                 placeholder="60"/>
+
               <label className="block text-sm font-medium text-gray-300 mb-1">Height (cm)</label>
               <input
                 onChange={(e) => setHeight(parseInt(e.target.value) || 0)}
@@ -187,6 +189,7 @@ export default function SignupPage() {
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-2"
                 type="number"
                 placeholder="170"/>
+
               <label className="block text-sm font-medium text-gray-300 mb-1">Weight (kg)</label>
               <input
                 onChange={(e) => setWeight(parseInt(e.target.value) || 0)}
@@ -194,9 +197,8 @@ export default function SignupPage() {
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-2"
                 type="number"
                 placeholder="70"/>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Diabetes Type
-              </label>
+
+              <label className="block text-sm font-medium text-gray-300 mb-1">Diabetes Type</label>
               <select
                 onChange={(e) => setDiabetesType(e.target.value)}
                 value={diabetesType}
@@ -207,28 +209,25 @@ export default function SignupPage() {
                 <option value="gestational">Gestational</option>
                 <option value="other">Other / Not Sure</option>
               </select>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Target Weight (kg)
-              </label>
+
+              <label className="block text-sm font-medium text-gray-300 mb-1">Target Weight (kg)</label>
               <input
                 onChange={(e) => setTargetWeight(parseInt(e.target.value) || 0)}
                 value={targetWeight}
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-2"
                 type="number"
                 placeholder="65"/>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Activity Level
-              </label>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Glucose Tracking Mode
-              </label>
+
+              <label className="block text-sm font-medium text-gray-300 mb-1">Glucose Tracking Mode</label>
               <select
                 onChange={(e) => setTrackingMode(e.target.value)}
                 value={trackingMode}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-4">
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded mb-2">
                 <option value="manual">Manual Entry</option>
                 <option value="dexcom">Dexcom Device</option>
               </select>
+
+              <label className="block text-sm font-medium text-gray-300 mb-1">Activity Level</label>
               <select
                 onChange={(e) => setActivityLevel(e.target.value)}
                 value={activityLevel}
@@ -239,6 +238,7 @@ export default function SignupPage() {
                 <option value="Active">Active</option>
                 <option value="Very Active">Very Active</option>
               </select>
+
               <button
                 className="w-full text-white py-2 rounded transition"
                 style={{ backgroundColor: "#1F1A5E" }}
