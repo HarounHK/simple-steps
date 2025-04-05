@@ -1,5 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../app/api/auth/[...nextauth]/authOptions";
+import { connectMongoDB } from "../../../app/lib/mongodb";
+import mongoose from "mongoose";
 
 // Formating date for Dexcom
 function formatDateForDexcom(date: Date): string {
@@ -7,14 +11,30 @@ function formatDateForDexcom(date: Date): string {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  let token = req.cookies.dexcom_token;
-  const refreshToken = req.cookies.dexcom_refresh_token; 
+  // @ts-expect-error ignore
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user?.email) {
+    return res.status(401).json({ error: "Unauthorized. Please sign in." });
+  }
 
-  // Refreshing token if access token is missing/outdated
-  if (!token && refreshToken) {
+  await connectMongoDB();
+
+  const user = await mongoose.connection
+    .collection("users")
+    .findOne({ email: session.user.email });
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  let token = user.dexcomAccessToken;
+  const refreshToken = user.dexcomRefreshToken;
+  const tokenExpiry = new Date(user.dexcomTokenExpiry);
+
+  // Refreshing token if expired
+  if (!token || new Date() > tokenExpiry) {
     try {
-      // const refreshResponse = await axios.post('https://api.dexcom.com/v2/oauth2/token',
-      const refreshResponse = await axios.post('https://sandbox-api.dexcom.com/v2/oauth2/token', 
+      const refreshResponse = await axios.post('https://sandbox-api.dexcom.com/v2/oauth2/token',
         new URLSearchParams({
           client_id: process.env.DEXCOM_CLIENT_ID!,
           client_secret: process.env.DEXCOM_CLIENT_SECRET!,
@@ -28,20 +48,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       token = access_token;
 
-      // Storing updated tokens in cookies
+      // Save updated tokens in DB and cookies
+      const expiryDate = new Date(Date.now() + expires_in * 1000);
+
+      await mongoose.connection.collection("users").updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            dexcomAccessToken: access_token,
+            dexcomRefreshToken: newRefreshToken,
+            dexcomTokenExpiry: expiryDate,
+          }
+        }
+      );
+
       res.setHeader('Set-Cookie', [
         `dexcom_token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expires_in}`,
         `dexcom_refresh_token=${newRefreshToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`
       ]);
-    } catch (error) { 
-      console.log("eeror:", error)
-      return res.status(401).json({ error: "Session expired. Please log in again." });
+    } catch (err) {
+      console.log("refresh token error:", err);
+      return res.status(401).json({ error: "Dexcom session expired. Please reauthorize." });
     }
-  }
-
-  // Rejecting request if no valid token is available
-  if (!token) {
-    return res.status(401).json({ error: "Your account is unauthorized. Please log in to access data." });
   }
 
   try {
@@ -55,8 +83,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     return res.status(200).json(response.data);
-  } catch (error) { 
-    console.log("eeror:", error)
-    return res.status(500).json({ error: "Failed to fetch glucose data"});
+  } catch (error) {
+    console.log("eeror:", error);
+    return res.status(500).json({ error: "Failed to fetch glucose data" });
   }
 }

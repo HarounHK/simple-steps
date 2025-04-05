@@ -5,14 +5,13 @@ import { connectMongoDB } from "../../../app/lib/mongodb";
 import mongoose from "mongoose";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-
   // @ts-expect-error ignore
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.email) {
     return res.status(200).json({ authorized: false });
   }
 
-  // Connectin ti DB and user doc
+  // Connecting to DB and finding user doc
   await connectMongoDB();
   const userDoc = await mongoose.connection
     .collection("users")
@@ -22,15 +21,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ authorized: false });
   }
 
-  if (userDoc.trackingMode !== "dexcom") {
-    return res.status(200).json({ authorized: false });
+  // Checking if user is in Dexcom mode and has token
+  if (
+    userDoc.trackingMode === "dexcom" &&
+    userDoc.dexcomAccessToken &&
+    userDoc.dexcomRefreshToken
+  ) {
+    return res.status(200).json({ authorized: true });
   }
 
-  // Checking fordexcom token cookie
-  const dexcomToken = req.cookies.dexcom_token;
-  if (!dexcomToken) {
-    return res.status(200).json({ authorized: false });
-  }
-
-  return res.status(200).json({ authorized: true });
+  return res.status(200).json({ authorized: false });
 }

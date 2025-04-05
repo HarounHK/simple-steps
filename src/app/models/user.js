@@ -13,6 +13,9 @@ const userSchema = new Schema(
     targetWeight: {type: Number,default: 0,},
     activityLevel: {type: String,enum: ["Not Very", "Lightly Active", "Active", "Very Active"],required: true,},
     trackingMode: {type: String,enum: ["manual", "dexcom"],default: "manual"},
+    dexcomAccessToken: { type: String, default: "" },
+    dexcomRefreshToken: { type: String, default: "" },
+    dexcomTokenExpiry: { type: Date, default: null },
   },
   { timestamps: true }
 );
