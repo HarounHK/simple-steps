@@ -1,8 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../app/api/auth/[...nextauth]/authOptions";
+import { connectMongoDB } from "../../../app/lib/mongodb";
+import mongoose from "mongoose";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-
   const { code, state } = req.query; // Extracting authorization code and state from the query parameters
 
   if (!code || !state) {
@@ -31,11 +34,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `dexcom_refresh_token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`
     ]);
 
+    // Persisting Dexcom tokens to user profile in MongoDB
+    // @ts-expect-error ignore
+    const session = await getServerSession(req, res, authOptions);
+    if (session?.user?.email) {
+      await connectMongoDB();
+
+      const expiryTime = new Date(Date.now() + expires_in * 1000); // Convert to Date
+
+      await mongoose.connection.collection("users").updateOne(
+        { email: session.user.email },
+        {
+          $set: {
+            dexcomAccessToken: access_token,
+            dexcomRefreshToken: refresh_token,
+            dexcomTokenExpiry: expiryTime
+          }
+        }
+      );
+    }
+
     // Redirecting user to the data retrieval endpoint after successful authentication
     res.writeHead(302, { Location: "/home" });
     return res.end();
   } catch (error) { 
-    console.log("error:", error)
+    console.log("error:", error);
     return res.status(500).json({ error: 'Failed to obtain access token' });
   }
 }

@@ -51,12 +51,23 @@ export default function ProfilePage() {
 
   if (!session) return null;
 
+  // const handleLogout = async () => {
+  //   try {
+  //     await signOut({ callbackUrl: "/login" });
+  //   } catch {
+  //     setError("Failed to log out. Try again.");
+  //   }
+  // };
+
   const handleLogout = async () => {
-    try {
-      await signOut({ callbackUrl: "/login" });
-    } catch {
-      setError("Failed to log out. Try again.");
-    }
+  
+    const res = await fetch("/api/dexcom/logout", { method: "POST" });
+    const data = await res.json();
+    console.log("Logout respinse", data);
+  
+    signOut({ redirect: false }).then(() => {
+      router.push("/");
+    });
   };
 
   // Sends a PUT request to update profile fields

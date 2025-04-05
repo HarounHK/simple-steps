@@ -10,12 +10,23 @@ export default function Navbar() {
 
   if (status === "loading") return null; 
 
+  // const handleLogout = async () => {
+  //   signOut({ redirect: false }).then(() => {
+  //     router.push("/");
+  //   });
+  // };
+
   const handleLogout = async () => {
+  
+    const res = await fetch("/api/dexcom/logout", { method: "POST" });
+    const data = await res.json();
+    console.log("Logout respinse", data);
+  
     signOut({ redirect: false }).then(() => {
       router.push("/");
     });
   };
-
+ 
   return (
     <nav className="absolute top-0 left-0 w-full p-4 bg-gradient-to-b from-black/80 to-transparent text-white flex justify-between items-center z-50">
       <Link
