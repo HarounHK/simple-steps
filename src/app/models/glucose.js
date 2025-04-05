@@ -14,4 +14,6 @@ const glucoseSchema = new Schema(
 );
 
 const Glucose = models.Glucose || mongoose.model("Glucose", glucoseSchema);
+// const Glucose = models.Glucose || mongoose.model("Glucose", glucoseSchema, "glucoses");
+
 export default Glucose;
