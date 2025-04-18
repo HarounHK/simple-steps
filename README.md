@@ -3,7 +3,7 @@
 ----------------------------------
 Author: Haroun Kassouri
 Date: 24/11/2024
-Live Deployed Website: 
+Deploed Live Website: [simplesteps.pro](https://simplesteps.pro/)
 ----------------------------------
 
 -------------------
@@ -101,7 +101,7 @@ npm run dev
 Go to http://localhost:3000 to see the application
 
 ----------------------
-# Key NPM Packages used - Make sure you have these npm packages installed
+# NPM Packages used 
 ----------------------
 npm install next react react-dom
 npm install bcryptjs mongoose
@@ -117,7 +117,7 @@ npm install dayjs
 ----------------------
 # Enviroment Variabes
 ----------------------
-# Create a .env.local file in the root directory and add the following enviorment variables. Fill in 'blank' wih your own keys
+Create a .env.local file in the root directory and add the following enviorment variables. Fill in 'blank' wih your own keys
 MONGODB_URI=blank
 OPENAI_API_KEY=blank
 FATSECRET_CLIENT_ID=blank
