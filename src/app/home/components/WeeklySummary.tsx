@@ -6,7 +6,7 @@ type Props = {
 };
 
 export default function WeeklySummary({ glucoseData }: Props) {
-  // Filters entries for a specific week (0 = current week, 1 = last week etc.)
+  // Filters entries for a specific week 
   const getEntriesForWeek = (entries: GlucoseEntry[], weeksAgo: number) => {
     const now = new Date();
     const start = new Date(now);
@@ -58,22 +58,22 @@ export default function WeeklySummary({ glucoseData }: Props) {
   return (
     <div className="bg-white text-black p-4 rounded-xl shadow-md mt-4 w-full max-w-3xl text-sm text-left">
       <p>
-        📊 This weeks average glucose: <strong>{thisWeekAvg} mg/dL</strong> (
+        This weeks average glucose: <strong>{thisWeekAvg} mg/dL</strong> (
         {percentChange >= 0 ? "+" : ""}
         {percentChange}% compared to last week)
       </p>
 
       <p>
-        ⚠️ Number of high readings (Above: 180 mg/dL): <strong>{highCount}</strong>
+        Number of high readings (Above: 180 mg/dL): <strong>{highCount}</strong>
       </p>
 
       <p>
-        🟦 Number of low readings (Below: 70 mg/dL): <strong>{lowCount}</strong>
+        Number of low readings (Below: 70 mg/dL): <strong>{lowCount}</strong>
       </p>
 
       {maxReading && (
         <p>
-          🚨 Highest reading: <strong>{maxReading.glucoseLevel} mg/dL</strong> at{" "}
+          Highest reading: <strong>{maxReading.glucoseLevel} mg/dL</strong> at{" "}
           {new Date(maxReading.timeOfMeasurement).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",

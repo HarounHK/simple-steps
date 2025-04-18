@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       messages: [
         {
           role: 'system',
-          content: `You are a helpful assistant supporting diabetic users. You have access to their profile and glucose readings. Always answer using exact profile values or recent glucose data. Be concise but medically accurate. If no data is found, say so.`,
+          content: `You are a helpful assistant supporting diabetic users. You have access to their profile, glucose readings and nutrition and exercise logs. Always answer using exact profile values or recent glucose data. Be concise but medically accurate. If no data is found, say so.`,
         },
         {
           role: 'user',

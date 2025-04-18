@@ -18,7 +18,7 @@ export function trainPolynomialModel(glucoseData: GlucoseEntry[]) {
 
   const model = new PolynomialRegression(normalizedX, values, degree);
 
-  console.log("📐 Coefficients:", model.coefficients);
+  console.log("Coefficients:", model.coefficients);
   return { model, minTime, maxTime };
 }
 

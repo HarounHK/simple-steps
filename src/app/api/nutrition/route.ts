@@ -123,16 +123,6 @@ export async function GET(request: Request) {
     
     const topFoods = foodItems.slice(0, 3);
     
-    // const foodItems = searchData.foods?.food;
-    
-    // if (!foodItems || (Array.isArray(foodItems) && foodItems.length === 0)) {
-    //   return NextResponse.json({ error: "No results found" }, { status: 404 });
-    // }
-
-    // Limit results to top 3 items
-    // const topFoods: FoodItem[] = ([] as FoodItem[]).concat(foodItems).slice(0, 3);
-
-    // Fetch detailed data and fix to per 100g
     const detailedFoods = await Promise.all(topFoods.map(fetchFood));
 
     async function fetchFood(item: FoodItem): Promise<Record<string, string | number> | null> {
