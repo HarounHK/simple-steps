@@ -2,335 +2,198 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-// Defines the structure of a glucose entry retrieved from DB
-type GlucoseEntry = {
-  _id: string;
-  glucoseLevel: number;
-  timeOfMeasurement: string;
-  mealContext: string;
-  notes?: string;
-};
+// Components
+import Card from "./components/card";
+import GlucoseLineChart from "./components/GlucoseLineChart";
+import GlucoseBarChart from "./components/GlucoseBarChart";
+import WeeklySummary from "./components/WeeklySummary";
+import ExportButtons from "./components/ExportButtons";
+import AlertBanner from "./components/AlertBanner";
+
+// Types and models
+import { GlucoseEntry } from "@/types";
+import { trainPolynomialModel, predictNextGlucose } from "./components/GlucosePredictionModel";
 
 export default function HomePage() {
-  // Retrieves the authenticated session and handles authentication
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
-  // Tracks user tracking mode "manual" or "dexcom"
-  const [trackingMode, setTrackingMode] = useState("manual");
-  const [dexcomAuthorized, setDexcomAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [glucoseData, setGlucoseData] = useState<GlucoseEntry[]>([]);
+  const [view, setView] = useState<"day" | "week" | "month">("week");
+  const [comparisonView, setComparisonView] = useState<"week" | "month">("month");
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [predictedNext, setPredictedNext] = useState<number | string>("N/A");
 
-  // Variables for handling form input values when adding/editing a glucose reading
-  const [glucoseLevel, setGlucoseLevel] = useState("");
-  const [timeOfMeasurement, setTimeOfMeasurement] = useState("");
-  const [mealContext, setMealContext] = useState("Before Meal");
-  const [notes, setNotes] = useState("");
-  const [message, setMessage] = useState("");
-
-  // Handles glucose readings and manages table data
-  const [glucoseReadings, setGlucoseReadings] = useState<GlucoseEntry[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const resultsPerPage = 5;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const totalPages = 3;
-
-  // Tracks which glucose reading is being edited
-  const [updatingID, setupdatingID] = useState<string | null>(null);
-
-  // Redirects to login page if not authenticated
+  // Redirect unauthenticated users
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
 
+  // Ask for notification permission once on mount
   useEffect(() => {
-    const fetchUserStatus = async () => {
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Fetch glucose readings and do predictions
+  useEffect(() => {
+    const fetchGlucose = async () => {
       try {
-        const profileResponse = await fetch("/api/profile");
-        const profileData = await profileResponse.json();
+        const res = await fetch("/api/glucose?page=1&limit=1000");
+        const { readings }: { readings: GlucoseEntry[] } = await res.json();
 
-        const mode = profileData.user.trackingMode || "manual";
-        setTrackingMode(mode);
+        setGlucoseData(readings);
+        checkForAlerts(readings);
 
-        if (mode === "dexcom") {
-          const dexcomResponse = await fetch("/api/dexcom/status", {
-            credentials: "include",
-          });
-          const dexcomData = await dexcomResponse.json();
-          setDexcomAuthorized(dexcomData.authorized);
+        if (readings.length >= 3) {
+          const model = trainPolynomialModel(readings);
+          const prediction = predictNextGlucose(model);
+          setPredictedNext(prediction);
+        } else {
+          setPredictedNext("N/A");
         }
-      } catch (error) {
-        console.error("error:", error);
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch glucose data", err);
       }
     };
 
-    if (session) {
-      fetchUserStatus();
+    fetchGlucose();
+  }, []);
+
+  // Check if any alerts should be shown based on recent readings
+  const checkForAlerts = (data: GlucoseEntry[]) => {
+    const latest = data.at(0);
+    const previous = data.at(1);
+
+    const predicted = latest && previous
+      ? Math.round(latest.glucoseLevel + (latest.glucoseLevel - previous.glucoseLevel) * 0.5)
+      : null;
+
+    if (!latest) return;
+
+    const time = new Date(latest.timeOfMeasurement).toLocaleTimeString();
+    const level = latest.glucoseLevel;
+
+    let msg = null;
+
+    if (level > 250) {
+      msg = `High reading at ${time}: ${level} mg/dL`;
+    } else if (level < 70) {
+      msg = `Low reading at ${time}: ${level} mg/dL`;
+    } else if (predicted && predicted > 250) {
+      msg = `Predicted spike: ${predicted} mg/dL in 1 hour`;
+    } else if (predicted && predicted < 70) {
+      msg = `Predicted drop: ${predicted} mg/dL in 1 hour`;
     }
-  }, [session]);
 
-  // Fetches glucose readings when page loads
-  useEffect(() => {
-    if (!session) return;
-    if (trackingMode === "manual" || (trackingMode === "dexcom" && dexcomAuthorized)) {
-      fetchGlucoseReadings(currentPage);
-    }
-  }, [session, currentPage, trackingMode, dexcomAuthorized]);
-
-  // Fetches glucose readings from API
-  const fetchGlucoseReadings = async (pageNumber: number) => {
-    try {
-      const response = await fetch(`/api/glucose?page=${pageNumber}&limit=${resultsPerPage}`);
-      const data = await response.json();
-
-      // Sorts pulled readings by descending order using timestamp
-      if (response.ok && data.readings) {
-        setGlucoseReadings(
-          data.readings.sort((a: GlucoseEntry, b: GlucoseEntry) => {
-            const dateA = new Date(a.timeOfMeasurement).getTime();
-            const dateB = new Date(b.timeOfMeasurement).getTime();
-            return dateB - dateA;
-          })
-        );
+    if (msg) {
+      setAlertMessage(msg);
+      if (Notification.permission === "granted") {
+        new Notification("Glucose Alert", { body: msg });
       }
-    } catch (error) {
-      console.log("error:", error);
-      setGlucoseReadings([]);
     }
   };
 
-  // Triggers Dexcom simulation every 5 minutes
-  useEffect(() => {
-    if (!(session && trackingMode === "dexcom" && dexcomAuthorized)) {
-      return;
-    }
+  const latestReading = glucoseData.at(0)?.glucoseLevel ?? "N/A";
 
-    const interval = setInterval(() => {
-      fetch("/api/dexcom/simulate", {
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("Dexcom simm response:", data);
-          fetchGlucoseReadings(currentPage);
-        })
-        .catch((error) => {
-          console.error("error:", error);
-        });
-    }, 5 * 60 * 1000);
+  // Calculates average glucose between a time range
+  const averageByHourRange = (start: number, end: number) => {
+    const filtered = glucoseData.filter((entry) => {
+      const hour = new Date(entry.timeOfMeasurement).getHours();
+      return hour >= start && hour < end;
+    });
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, [session?.user?.email, trackingMode, dexcomAuthorized]);
-
-  // Handles form submission for adding a new glucose reading
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const glucoseData = {
-      glucoseLevel: parseInt(glucoseLevel, 10),
-      timeOfMeasurement,
-      mealContext,
-      notes,
-    };
-
-    try {
-      const response = await fetch("/api/glucose", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(glucoseData),
-      });
-
-      const result = await response.json();
-      console.log("submit response:", result);
-
-      if (response.ok) {
-        setMessage("Glucose reading saved successfully");
-        resetForm();
-        fetchGlucoseReadings(1);
-      } else {
-        setMessage("Failed to save the glucose reading");
-      }
-    } catch (error) {
-      console.log("error:", error);
-      setMessage("Error saving data");
-    }
+    const total = filtered.reduce((sum, e) => sum + e.glucoseLevel, 0);
+    return filtered.length ? Math.round(total / filtered.length) : "N/A";
   };
 
-  // Populates the form fields with the already existing data when updating a glucose reading
-  const handleEdit = (reading: GlucoseEntry) => {
-    setGlucoseLevel(reading.glucoseLevel.toString());
-    setTimeOfMeasurement(new Date(reading.timeOfMeasurement).toISOString().slice(0, 16));
-    setMealContext(reading.mealContext);
-    setNotes(reading.notes || "");
-    setupdatingID(reading._id);
-  };
-
-  // Submits updated data to the DB
-  const handleUpdate = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!updatingID) return;
-
-    const updatedData = {
-      glucoseLevel: parseInt(glucoseLevel, 10),
-      timeOfMeasurement,
-      mealContext,
-      notes,
-    };
-
-    try {
-      const response = await fetch(`/api/glucose/${updatingID}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
-      });
-      const result = await response.json();
-      console.log("update response", result);
-
-      if (response.ok) {
-        setMessage("Glucose reading updated successfully");
-        resetForm();
-        setupdatingID(null);
-        fetchGlucoseReadings(currentPage);
-      } else {
-        setMessage("Failed to update glucose reading");
-      }
-    } catch (error) {
-      console.log("error:", error);
-      setMessage("Error updating data");
-    }
-  };
-
-  // Resets form fields
-  const resetForm = () => {
-    setGlucoseLevel("");
-    setTimeOfMeasurement("");
-    setMealContext("Before Meal");
-    setNotes("");
-  };
-
-  if (loading) {
-    return null;
-  }
+  // Morning: 5 AM - 12 PM
+  const morningAvg = averageByHourRange(5, 12);
+  // Evening: 12 PM - 8 PM
+  const eveningAvg = averageByHourRange(12, 20);
+  // Night: 8 PM - 5 AM (split range)
+  const nightAvg = (() => {
+    const night1 = averageByHourRange(20, 24);
+    const night2 = averageByHourRange(0, 5);
+    if (night1 === "N/A" && night2 === "N/A") return "N/A";
+    return Math.round(((+night1 || 0) + (+night2 || 0)) / 2);
+  })();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#D7AAFA] text-white">
-      <h2 className="text-lg mb-2">[HomePage] Debugging: trackingMode={trackingMode}, dexcomAuthorized={dexcomAuthorized.toString()}</h2>
+    <div className="flex flex-col items-center justify-start min-h-screen w-full bg-[#D7AAFA] text-white px-4 pt-32 text-center">
+      <h1 className="text-3xl font-bold mb-4">Glucose Monitoring Dashboard</h1>
 
-      {trackingMode === "manual" && (
-        <div className="bg-white p-6 rounded-lg shadow-md mt-6 w-full max-w-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {updatingID ? "Update Glucose Reading" : "Add Glucose Reading"}
-          </h2>
-          {message && <p className="text-center text-sm text-gray-800">{message}</p>}
-          <form onSubmit={updatingID ? handleUpdate : handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="number"
-              placeholder="Glucose Level (mg/dL)"
-              value={glucoseLevel}
-              onChange={(e) => setGlucoseLevel(e.target.value)}
-              required
-              className="border p-2 rounded-md text-black"
-            />
-            <input
-              type="datetime-local"
-              value={timeOfMeasurement}
-              onChange={(e) => setTimeOfMeasurement(e.target.value)}
-              required
-              className="border p-2 rounded-md text-black"
-            />
-            <select
-              value={mealContext}
-              onChange={(e) => setMealContext(e.target.value)}
-              className="border p-2 rounded-md text-black"
-            >
-              <option value="Before Meal">Before Meal</option>
-              <option value="After Meal">After Meal</option>
-              <option value="Fasting">Fasting</option>
-            </select>
-            <textarea
-              value={notes}
-              placeholder="Notes (optional)"
-              onChange={(e) => setNotes(e.target.value)}
-              className="border p-2 rounded-md text-black"
-            />
+      <AlertBanner message={alertMessage} onClose={() => setAlertMessage(null)} />
+
+      {/* Glucose summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 w-full max-w-3xl">
+        <Card title="Latest Reading" value={latestReading} />
+        <Card title="Predicted Next Reading" value={predictedNext} />
+      </div>
+
+      {/* Average glucose by time of day */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 w-full max-w-3xl">
+        <Card title="Avg Morning (All Time)" value={morningAvg} />
+        <Card title="Avg Evening (All Time)" value={eveningAvg} />
+        <Card title="Avg Night (All Time)" value={nightAvg} />
+      </div>
+
+      {/* Weekly summary, charts, and export buttons */}
+      <div className="w-full flex flex-col items-center">
+        <div className="mb-6">
+          <WeeklySummary glucoseData={glucoseData} />
+        </div>
+
+        {/* Time range switcher */}
+        <div className="flex justify-center gap-4 mb-6">
+          {["day", "week", "month"].map((option) => (
             <button
-              type="submit"
-              className="bg-[#1F1A5E] text-white py-2 px-4 rounded-md hover:bg-[#15114A]"
+              key={option}
+              onClick={() => setView(option as "day" | "week" | "month")}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                view === option ? "bg-[#B580E4] text-white" : "bg-white text-black"
+              }`}
             >
-              {updatingID ? "Update" : "Submit"}
+              {option.charAt(0).toUpperCase() + option.slice(1)}
             </button>
-          </form>
+          ))}
         </div>
-      )}
 
-      {trackingMode === "dexcom" && !dexcomAuthorized ? (
-        <div className="mt-6">
-          <button
-            onClick={() => router.push("/api/dexcom/auth")}
-            className="bg-[#1F1A5E] text-white py-2 px-6 rounded-md hover:bg-[#15114A]"
-          >
-            Authorize Dexcom
-          </button>
+        {/* Line chart for glucose trends */}
+        <div className="bg-white p-4 rounded-xl w-full max-w-3xl mb-6">
+          <GlucoseLineChart glucoseData={glucoseData} view={view} />
         </div>
-      ) : null}
 
-      {(trackingMode === "manual" || (trackingMode === "dexcom" && dexcomAuthorized)) && (
-        <div className="bg-white p-6 rounded-lg shadow-md mt-6 w-full max-w-2xl">
-          <>
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-200 text-black">
-                  <th className="border p-2">Glucose Level</th>
-                  <th className="border p-2">Time</th>
-                  <th className="border p-2">Meal Context</th>
-                  <th className="border p-2">Notes</th>
-                  <th className="border p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {glucoseReadings.map((entry) => (
-                  <tr key={entry._id}>
-                    <td className="border p-2 text-black">{entry.glucoseLevel}</td>
-                    <td className="border p-2 text-black">
-                      {new Date(entry.timeOfMeasurement).toLocaleString()}
-                    </td>
-                    <td className="border p-2 text-black">{entry.mealContext}</td>
-                    <td className="border p-2 text-black">{entry.notes || "N/A"}</td>
-                    <td className="border p-2">
-                      <button onClick={() => handleEdit(entry)} className="text-blue-500 underline">
-                        Update
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex justify-center mt-4">
-              {[1, 2, 3].map((num) => (
-                <button
-                  key={num}
-                  onClick={() => setCurrentPage(num)}
-                  className={`px-4 py-2 mx-1 rounded-md ${
-                    currentPage === num ? "bg-[#1F1A5E] text-white" : "bg-[#D7AAFA] text-black"
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-          </>
+        {/* Comparison view switcher */}
+        <div className="flex justify-center gap-4 mb-4">
+          {["week", "month"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setComparisonView(type as "week" | "month")}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                comparisonView === type ? "bg-[#B580E4] text-white" : "bg-white text-black"
+              }`}
+            >
+              {type === "week" ? "Weekly" : "Monthly"}
+            </button>
+          ))}
         </div>
-      )}
+
+        {/* Bar chart for comparisons */}
+        <div className="bg-white p-4 rounded-xl w-full max-w-4xl mb-6">
+          <GlucoseBarChart glucoseData={glucoseData} comparisonView={comparisonView} />
+        </div>
+      </div>
+
+      {/* Data export buttons */}
+      <div className="mb-10">
+        <ExportButtons glucoseData={glucoseData} />
+      </div>
     </div>
   );
 }

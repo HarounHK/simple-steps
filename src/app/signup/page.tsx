@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // ✅ added
   const [sex, setSex] = useState("");
   const [age, setAge] = useState(0);
   const [height, setHeight] = useState(0);
@@ -39,8 +40,18 @@ export default function SignupPage() {
   const handleNext = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       setError("All fields are necessary.");
+      return;
+    }
+
+    if (password.length < 6 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+      setError("Password must be at least 6 characters and include a letter and a number.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -58,6 +69,7 @@ export default function SignupPage() {
         return;
       }
 
+      setError(""); // clear previous error
       setStep(2);
     } catch (error){
       console.log("Error during registration: ", error);
@@ -73,8 +85,23 @@ export default function SignupPage() {
       return;
     }
 
+    if (age < 16) {
+      setError("Age must be 16 or older.");
+      return;
+    }
+
+    if (height < 50 || weight < 20 || targetWeight < 20) {
+      setError("Please enter correct values for height and weight.");
+      return;
+    }
+
+    if (height > 260 || weight > 650) {
+      setError("Entered values is too high. please double-check.");
+      return;
+    }
+
     try {
-      // sens post request to signup
+      // sends post request to signup
       const signupResponse = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,7 +116,7 @@ export default function SignupPage() {
           diabetesType,
           targetWeight,
           activityLevel,
-          trackingMode // ✅ make sure trackingMode is sent
+          trackingMode 
         }),
       });
 
@@ -108,7 +135,7 @@ export default function SignupPage() {
       <ImagesSlider
         images={["/images/image1.jpg", "/images/image2.jpg", "/images/image3.jpg"]}
         className="absolute inset-0 w-full h-full object-cover z-0">
-        <> </>
+        <> </> 
       </ImagesSlider>
       <div className="absolute inset-0 bg-black/60 z-0"></div>
       <div
@@ -139,6 +166,12 @@ export default function SignupPage() {
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded focus:outline-none focus:ring focus:ring-[#1F1A5E]"
                 type="password"
                 placeholder="Enter your password"/>
+              <input
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={confirmPassword}
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded focus:outline-none focus:ring focus:ring-[#1F1A5E]"
+                type="password"
+                placeholder="Confirm your password"/>
               <button
                 className="w-full text-white py-2 rounded transition"
                 style={{ backgroundColor: "#1F1A5E" }}

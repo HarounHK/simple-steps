@@ -8,7 +8,10 @@ interface UserData {
   activityLevel: "Lightly Active" | "Active" | "Very Active";
 }
 
-export function calculateDailyCalories(user: UserData | null) {
+export function calculateDailyCalories(
+  user: UserData | null,
+  caloriesBurnedToday = 0
+) {
   if (!user) return 2000;
   const { sex, age, height, weight, targetWeight, activityLevel } = user;
 
@@ -35,6 +38,9 @@ export function calculateDailyCalories(user: UserData | null) {
   } else if (weight < targetWeight) {
     dailyGoal = maintenanceCalories + 500;
   }
+
+  // Deduct calories burned through exercise
+  dailyGoal -= caloriesBurnedToday;
 
   return dailyGoal;
 }

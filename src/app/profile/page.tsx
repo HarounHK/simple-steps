@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
   // Defines the structure of fetched profileDB entry 
-  interface UserProfile {
+interface UserProfile {
   name: string;
   email: string;
   sex: string;
@@ -60,11 +60,10 @@ export default function ProfilePage() {
   // };
 
   const handleLogout = async () => {
-  
     const res = await fetch("/api/dexcom/logout", { method: "POST" });
     const data = await res.json();
     console.log("Logout respinse", data);
-  
+
     signOut({ redirect: false }).then(() => {
       router.push("/");
     });
@@ -117,7 +116,8 @@ export default function ProfilePage() {
               label="Sex"
               fieldName="sex"
               value={profileData.sex}
-              onUpdate={updateField}/>
+              onUpdate={updateField}
+            />
             <ProfileFieldRow
               label="Age"
               fieldName="age"
@@ -203,7 +203,6 @@ function ProfileFieldRow({
     if (isNumber) {
       finalValue = parseFloat(tempValue as string) || 0;
     }
-
     await onUpdate(fieldName, finalValue);
     setEditing(false);
   }
@@ -213,33 +212,54 @@ function ProfileFieldRow({
     setEditing(false);
   }
 
+  const selectOptions: Record<string, string[]> = {
+    sex: ["male", "female", "other"],
+    diabetesType: ["type1", "type2", "gestational", "other"],
+    activityLevel: ["Not Very", "Lightly Active", "Active", "Very Active"],
+    trackingMode: ["manual", "dexcom"],
+  };
+
+  const isSelectField = Object.keys(selectOptions).includes(fieldName);
+
   return (
     <div className="flex items-center justify-between">
-      <div>
+      <div className="w-full">
         {!editing && (
           <>
             <span className="font-bold">{label}:</span> {value}
           </>
         )}
-
         {editing && (
-          <div className="mt-2">
+          <div className="mt-2 w-full">
             <label className="font-bold block mb-1">{label}</label>
-            <input
-              type="text"
-              className="border rounded px-2 py-1 w-full"
-              value={tempValue}
-              onChange={(e) => setTempValue(e.target.value)}
-            />
+            {isSelectField ? (
+              <select
+                value={tempValue as string}
+                onChange={(e) => setTempValue(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-white border border-gray-300 text-gray-800"
+              >
+                {selectOptions[fieldName].map((option) => (
+                  <option key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={isNumber ? "number" : "text"}
+                value={tempValue}
+                onChange={(e) => setTempValue(isNumber ? parseFloat(e.target.value) : e.target.value)}
+                className="w-full px-3 py-2 rounded bg-white border border-gray-300 text-gray-800"
+              />
+            )}
           </div>
         )}
       </div>
-
-      <div>
+      <div className="ml-4">
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
-            className="ml-4 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            className="bg-[#5B21B6] text-white px-3 py-1 rounded hover:bg-[#4C1D95]"
           >
             Edit
           </button>
@@ -247,13 +267,13 @@ function ProfileFieldRow({
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="ml-4 bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+              className="bg-[#10B981] text-white px-3 py-1 rounded hover:bg-[#059669]"
             >
               Save
             </button>
             <button
               onClick={handleCancel}
-              className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
             >
               Cancel
             </button>

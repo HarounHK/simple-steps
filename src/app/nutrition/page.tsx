@@ -45,6 +45,12 @@ interface ExerciseEntry {
   time?: string; 
 }
 
+interface ExerciseSearchResult {
+  name?: string;
+  activity?: string;
+  calories_per_hour?: number;
+}
+
 export default function NutritionPage() {
   const [dailyGoal, setDailyGoal] = useState(2000);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -74,7 +80,8 @@ export default function NutritionPage() {
 
   const [searchExerciseModal, setSearchExerciseModal] = useState(false);
   const [searchExerciseQuery, setSearchExerciseQuery] = useState("");
-  const [exerciseSearchResults, setExerciseSearchResults] = useState<any[]>([]);
+  const [exerciseSearchResults, setExerciseSearchResults] =
+    useState<ExerciseSearchResult[]>([]);
 
   // Holds exercise entries for the day
   const [exerciseEntries, setExerciseEntries] = useState<ExerciseEntry[]>([]);
@@ -92,40 +99,41 @@ export default function NutritionPage() {
 
   const [exerciseTime, setExerciseTime] = useState("");
   const [editExerciseTime, setEditExerciseTime] = useState("");
+  const [caloriesBurnedToday, setCaloriesBurnedToday] = useState(0);
 
   const loadDiary = useCallback(async () => {
     try {
-      const profileResponse = await fetch("/api/profile");
-      const dataProfile = await profileResponse.json();
-
-      if (profileResponse.ok && dataProfile.user) {
-        const newGoal = calculateDailyCalories(dataProfile.user);
+      const profileRes  = await fetch("/api/profile");
+      const profileData = await profileRes.json();
+  
+      const dateISO = currentDate.toISOString().split("T")[0];
+  
+      const diaryRes  = await fetch(`/api/diary/byDate/${dateISO}`);
+      const diaryData = await diaryRes.json();
+      if (!diaryRes.ok) throw new Error("Diary fetch failed");
+      setDiaryEntries(diaryData.entries || []);
+  
+      const exRes  = await fetch(`/api/diary/exercise/byDate/${dateISO}`);
+      const exData = await exRes.json();
+      setExerciseEntries(exRes.ok ? exData.entries || [] : []);
+  
+      const caloriesBurnedToday =
+        (exData.entries || []).reduce(
+          (sum: number, e: ExerciseEntry) => sum + (e.caloriesBurned || 0),
+          0
+        );
+      
+      setCaloriesBurnedToday(caloriesBurnedToday); 
+  
+      if (profileRes.ok && profileData.user) {
+        const newGoal = calculateDailyCalories(profileData.user, caloriesBurnedToday);
         setDailyGoal(newGoal);
-      } else {
-        console.error("Error loading Profile data.");
       }
-
-      const dateParam = currentDate.toISOString().split("T")[0];
-      const diaryResponse = await fetch(`/api/diary/byDate/${dateParam}`);
-      const dataDiary = await diaryResponse.json();
-
-      if (!diaryResponse.ok) {
-        throw new Error("Failed to fetch diary");
-      }
-      setDiaryEntries(dataDiary.entries || []);
+  
       setErrorMessage("");
-
-      const exerciseResponse = await fetch(`/api/diary/exercise/byDate/${dateParam}`);
-      const dataExercise = await exerciseResponse.json();
-      if (exerciseResponse.ok) {
-        setExerciseEntries(dataExercise.entries || []);
-      } else {
-        console.error("Error loading exercise data.");
-      }
-
-    } catch (error) {
-      console.error("Error loading diary data:", error);
-      setErrorMessage("Couldn’t load your diary right now. Please try again later.");
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Couldn’t load your diary. Please try again.");
     }
   }, [currentDate]);
 
@@ -320,7 +328,7 @@ export default function NutritionPage() {
     if (!editEntry) return;
 
     const updatedData = {
-      mealType: editMealType,
+      mealType:	editMealType,
       foodName: editFoodName,
       grams: editPortion,
       calories: editEntry.calories,
@@ -356,7 +364,12 @@ export default function NutritionPage() {
     (sum, entry) => sum + (entry.calories || 0),
     0
   );
-  const difference = Math.round(totalCalories - dailyGoal);
+  const totalBurned = exerciseEntries.reduce(
+    (sum, entry) => sum + (entry.caloriesBurned || 0),
+    0
+  );
+  const netCalories = totalCalories - totalBurned;
+  const difference = Math.round(netCalories - dailyGoal);
   let dailySummary = "";
   if (difference > 0) {
     dailySummary = `You are OVER your daily goal by ${difference} kcal.`;
@@ -481,7 +494,7 @@ export default function NutritionPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[#d8b4f8] p-6">
+    <div className="min-h-screen flex flex-col items-center pt-32 bg-[#d8b4f8] p-6">
       {errorMessage && (
         <div className="mb-4 text-red-700 font-bold">{errorMessage}</div>
       )}
@@ -527,7 +540,7 @@ export default function NutritionPage() {
         )}
 
         <div className="mb-4 text-[#2a1a5e] font-bold">
-          Daily Goal: {dailyGoal} kcal | Eaten: {Math.round(totalCalories)} kcal
+          Daily Goal: {dailyGoal} kcal | Eaten: {Math.round(totalCalories)} kcal | Burned: {caloriesBurnedToday} kcal
         </div>
         <div className="mb-4 text-black font-semibold">{dailySummary}</div>
 
@@ -798,8 +811,8 @@ function SearchExerciseModal({
   onSearch: () => void;
   query: string;
   setQuery: (val: string) => void;
-  searchResults: any[];
-  addExerciseModal: (ex: any) => void;
+  searchResults: ExerciseSearchResult[];
+  addExerciseModal: (ex: ExerciseSearchResult) => void;
 }) {
   if (!isOpen) return null;
 
