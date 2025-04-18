@@ -3,6 +3,7 @@
 ----------------------------------
 Author: Haroun Kassouri
 Date: 24/11/2024
+Live Deployed Website: 
 ----------------------------------
 
 -------------------
@@ -81,11 +82,27 @@ Offline support via Progressive Web App (PWA)
 ----------------------
 Setup and Installation
 ----------------------
-Ensure you have the following installed:
+# Ensure you have the following installed:
 Node.js 
 npm 
 
-Install these extra NPM packages
+# Clone the repository:
+git clone https://github.com/HarounHK/Simple-Steps.git
+
+# Install Dependencies:
+npm install
+
+# Navigate to main directory:
+cd simples-steps 
+
+# Run this command to launch:
+npm run dev  
+
+Go to http://localhost:3000 to see the application
+
+----------------------
+# Key NPM Packages used - Make sure you have these npm packages installed
+----------------------
 npm install next react react-dom
 npm install bcryptjs mongoose
 npm install openai
@@ -97,21 +114,10 @@ npm install react-toastify
 npm install cookie jsonwebtoken
 npm install dayjs
 
-Clone the repository:
-git clone https://github.com/HarounHK/Simple-Steps.git
-
-Install Dependencies:
-npm install
-
-Navigate to main directory:
-cd simples-steps 
-
-Run this command to launch:
-npm run dev  
-
-Go to http://localhost:3000 to see the application
-
-Create a .env.local file in the root directory and add the following enviorment variables. Fill in 'blank' wih your own keys
+----------------------
+# Enviroment Variabes
+----------------------
+# Create a .env.local file in the root directory and add the following enviorment variables. Fill in 'blank' wih your own keys
 MONGODB_URI=blank
 OPENAI_API_KEY=blank
 FATSECRET_CLIENT_ID=blank
