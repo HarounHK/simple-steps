@@ -79,22 +79,22 @@ export default function HomePage() {
     const time = new Date(latest.timeOfMeasurement).toLocaleTimeString();
     const level = latest.glucoseLevel;
 
-    let msg = null;
+    let message = null;
 
     if (level > 250) {
-      msg = `High reading at ${time}: ${level} mg/dL`;
+      message = `High reading at ${time}: ${level} mg/dL`;
     } else if (level < 70) {
-      msg = `Low reading at ${time}: ${level} mg/dL`;
+      message = `Low reading at ${time}: ${level} mg/dL`;
     } else if (predicted && predicted > 250) {
-      msg = `Predicted spike: ${predicted} mg/dL in 1 hour`;
+      message = `Predicted spike: ${predicted} mg/dL in 1 hour`;
     } else if (predicted && predicted < 70) {
-      msg = `Predicted drop: ${predicted} mg/dL in 1 hour`;
+      message = `Predicted drop: ${predicted} mg/dL in 1 hour`;
     }
 
-    if (msg) {
-      setAlertMessage(msg);
+    if (message) {
+      setAlertMessage(message);
       if (Notification.permission === "granted") {
-        new Notification("Glucose Alert", { body: msg });
+        new Notification("Glucose Alert", { body: message });
       }
     }
   };
@@ -112,11 +112,9 @@ export default function HomePage() {
     return filtered.length ? Math.round(total / filtered.length) : "N/A";
   };
 
-  // Morning: 5 AM - 12 PM
+  // Averages split by time
   const morningAvg = averageByHourRange(5, 12);
-  // Evening: 12 PM - 8 PM
   const eveningAvg = averageByHourRange(12, 20);
-  // Night: 8 PM - 5 AM (split range)
   const nightAvg = (() => {
     const night1 = averageByHourRange(20, 24);
     const night2 = averageByHourRange(0, 5);
