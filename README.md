@@ -1,9 +1,9 @@
 # Simple-Steps – Diabetes Management Platform 
 
 ----------------------------------
-Author: Haroun Kassouri
-Date: 24/11/2024
-Deploed Live Website: [simplesteps.pro](https://simplesteps.pro/)
+** Author: Haroun Kassouri
+** Date: 24/11/2024
+** Deployed Live Website: [simplesteps.pro](https://simplesteps.pro/)
 ----------------------------------
 
 -------------------
