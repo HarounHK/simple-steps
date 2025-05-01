@@ -1,22 +1,20 @@
+// /api/nutrition  – verbose-logging version
 import { NextResponse } from "next/server";
 
-// FatSecret endpoint and OAuth credentials
+/* ------------------------------------------------------------------ */
+/*  FatSecret constants + helper                                      */
+/* ------------------------------------------------------------------ */
 const FATSECRET_API_URL = "https://platform.fatsecret.com/rest/server.api";
-const CLIENT_ID = process.env.FATSECRET_CLIENT_ID!;
-const CLIENT_SECRET = process.env.FATSECRET_CLIENT_SECRET!;
+const CLIENT_ID     = (process.env.FATSECRET_CLIENT_ID  || "").trim();
+const CLIENT_SECRET = (process.env.FATSECRET_CLIENT_SECRET || "").trim();
 
-console.log(
-  "FatSecret creds length",
-  CLIENT_ID.length,
-  CLIENT_SECRET.length
-);
+console.log("🐾  Loaded FatSecret env-vars » id.length=%d  secret.length=%d",
+            CLIENT_ID.length, CLIENT_SECRET.length);
 
-// Interfaces
-interface FoodItem {
-  food_id: string;
-  [key: string]: unknown;
-}
-
+/* ------------------------------------------------------------------ */
+/*  Utilities                                                         */
+/* ------------------------------------------------------------------ */
+interface FoodItem { food_id: string; [k: string]: unknown }
 interface ServingData {
   serving_weight_grams?: string | number;
   metric_serving_amount?: string | number;
@@ -25,160 +23,159 @@ interface ServingData {
   carbohydrate?: string | number;
   fat?: string | number;
   sugar?: string | number;
-  [key: string]: unknown;
+  [k: string]: unknown;
 }
-
 interface FoodDetails {
   food_name?: string;
-  servings?: {
-    serving?: ServingData | ServingData[];
-  };
-  [key: string]: unknown;
+  servings?: { serving?: ServingData | ServingData[] };
+  [k: string]: unknown;
 }
 
-// Parses a value to a float
-function parseNumber(value: unknown): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return parseFloat(value) || 0;
-  return 0;
-}
+const num = (v: unknown) =>
+  typeof v === "number" ? v : typeof v === "string" ? parseFloat(v) || 0 : 0;
 
-// Converts nutrient values to per 100g
-function convertToPer100g(nutrientValue: unknown, servingWeight: number): string {
-  if (!servingWeight || servingWeight <= 0) return parseNumber(nutrientValue).toFixed(2);
-  return ((parseNumber(nutrientValue) * 100) / servingWeight).toFixed(2);
-}
+const per100g = (v: unknown, g: number) =>
+  !g ? num(v).toFixed(2) : ((num(v) * 100) / g).toFixed(2);
 
-// Fetches an OAuth access token from FatSecret.
+/* ------------------------------------------------------------------ */
+/*  OAuth token                                                       */
+/* ------------------------------------------------------------------ */
 async function fetchAccessToken(): Promise<string> {
-  const url = "https://oauth.fatsecret.com/connect/token";
+  console.log("🔑  Requesting FatSecret access-token …");
 
-  const res = await fetch("https://platform.fatsecret.com/rest/server.api?method=profile.get_status");
-  console.log(res.status); // should be 401/403, never ECONNREFUSED or ENOTFOUND
-
-  const id  = process.env.FATSECRET_CLIENT_ID?.trim();
-  const sec = process.env.FATSECRET_CLIENT_SECRET?.trim();
-  
-  if (!id || !sec) {
-    throw new Error("FatSecret env vars are missing");
+  if (!CLIENT_ID || !CLIENT_SECRET) {
+    throw new Error("FatSecret credentials are missing!");
   }
 
-  console.log(
-    "FatSecret creds length",
-    CLIENT_ID.length,
-    CLIENT_SECRET.length
-  );
-
-  const response = await fetch(url, {
+  const res = await fetch("https://oauth.fatsecret.com/connect/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      // Authorization: `Basic ${btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)}`,
-      Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`
+      Authorization:
+        "Basic " +
+        Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64"),
     },
     body: "grant_type=client_credentials&scope=basic",
   });
 
-  if (!response.ok) {
-    return NextResponse.json({ error: "Failed to retrieve access token" }, { status: 500 }) as unknown as string;
-  }
+  const body = await res.text();
+  console.log("🔑  token status=%d  body=%s", res.status, body.slice(0, 300));
 
-  const data = await response.json();
-  return data.access_token;
+  if (!res.ok) throw new Error("Failed to get FatSecret token");
+
+  return JSON.parse(body).access_token as string;
 }
 
-// Retrieves detailed info about a specific food item using the food ID.
-async function fetchFoodDetails(foodId: string, token: string): Promise<FoodDetails> {
-  const response = await fetch(
-    `${FATSECRET_API_URL}?method=food.get.v3&format=json&food_id=${foodId}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+/* ------------------------------------------------------------------ */
+/*  Helpers for food look-ups                                         */
+/* ------------------------------------------------------------------ */
+async function fetchFoodDetails(foodId: string, token: string) {
+  const url = `${FATSECRET_API_URL}?method=food.get.v3&format=json&food_id=${foodId}`;
+  console.log("🥄  food.get.v3 id=%s", foodId);
 
-  if (!response.ok) {
-    return NextResponse.json({ error: "Could not retrieve food details." }, { status: 500 }) as unknown as FoodDetails;
-  }
+  const res   = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const body  = await res.text();
+  console.log("🥄  details status=%d size=%dB", res.status, body.length);
 
-  const data = await response.json();
-  return data.food;
+  if (!res.ok) throw new Error("food.get.v3 failed");
+  return JSON.parse(body).food as FoodDetails;
 }
 
-// Handles GET request for searching and returning food data.
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("query");
+/* ------------------------------------------------------------------ */
+/*  Route handler                                                     */
+/* ------------------------------------------------------------------ */
+export async function GET(req: Request) {
+  console.log("\n🚀  /api/nutrition --------------------------------------------------");
+
+  const query = new URL(req.url).searchParams.get("query")?.trim();
+  console.log("🔍  query='%s'", query);
+
+  if (!query) {
+    return NextResponse.json({ error: "Missing query" }, { status: 400 });
+  }
 
   try {
+    console.time("⏱️  overall");
+
+    /* ---------------- token ---------------- */
     const token = await fetchAccessToken();
 
-    // Search for food items matching the query
-    const searchResponse = await fetch(
-      `${FATSECRET_API_URL}?method=foods.search&format=json&search_expression=${encodeURIComponent(query!)}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      }
+    /* ---------------- search ---------------- */
+    const searchURL =
+      FATSECRET_API_URL +
+      `?method=foods.search&format=json&search_expression=${encodeURIComponent(
+        query,
+      )}`;
+    console.log("📡  foods.search %s", searchURL);
+
+    const sRes  = await fetch(searchURL, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const sBody = await sRes.text();
+    console.log("📡  search status=%d size=%dB", sRes.status, sBody.length);
+
+    if (!sRes.ok) {
+      return NextResponse.json(
+        { error: "Error from foods.search" },
+        { status: 500 },
+      );
+    }
+
+    const data      = JSON.parse(sBody);
+    const rawItems  = data?.foods?.food;
+    const foodItems: FoodItem[] = Array.isArray(rawItems)
+      ? rawItems
+      : rawItems
+        ? [rawItems]
+        : [];
+
+    console.log("📊  foods returned=%d", foodItems.length);
+
+    if (!foodItems.length) {
+      return NextResponse.json({ error: "No results found" }, { status: 404 });
+    }
+
+    /* ---------------- details for top 3 ---------------- */
+    const detailed = await Promise.all(
+      foodItems.slice(0, 3).map(async (item) => {
+        try {
+          const d = await fetchFoodDetails(item.food_id, token);
+
+          const s = Array.isArray(d.servings?.serving)
+            ? d.servings!.serving![0]
+            : d.servings?.serving;
+
+          const g =
+            num(s?.serving_weight_grams) ||
+            num(s?.metric_serving_amount) ||
+            100;
+
+          const result = {
+            id: item.food_id,
+            name: d.food_name ?? "Unknown",
+            calories: per100g(s?.calories, g),
+            protein: per100g(s?.protein, g),
+            carbs: per100g(s?.carbohydrate, g),
+            fat: per100g(s?.fat, g),
+            sugar: per100g(s?.sugar, g),
+          };
+
+          console.log("✅  built %o", result);
+          return result;
+        } catch (err) {
+          console.error("❌  detail failed for %s – %o", item.food_id, err);
+          return null;
+        }
+      }),
     );
 
-    if (!searchResponse.ok) {
-      return NextResponse.json({ error: "Could not retrieve search results." }, { status: 500 });
-    }
+    const cleaned = detailed.filter(Boolean);
+    console.log("🎯  returning %d items", cleaned.length);
+    console.timeEnd("⏱️  overall");
 
-    const searchData = await searchResponse.json();
-
-    const rawItems = searchData.foods?.food;
-
-    if (!rawItems) {
-      return NextResponse.json({ error: "No results found" }, { status: 404 });
-    }
-    
-    // Normalize: always return an array
-    const foodItems: FoodItem[] = Array.isArray(rawItems) ? rawItems : [rawItems];
-    
-    if (foodItems.length === 0) {
-      return NextResponse.json({ error: "No results found" }, { status: 404 });
-    }
-    
-    const topFoods = foodItems.slice(0, 3);
-    
-    const detailedFoods = await Promise.all(topFoods.map(fetchFood));
-
-    async function fetchFood(item: FoodItem): Promise<Record<string, string | number> | null> {
-      try {
-        const details = await fetchFoodDetails(item.food_id as string, token);
-
-        const servingData = Array.isArray(details?.servings?.serving)
-          ? details.servings.serving[0]
-          : details.servings?.serving;
-
-        const servingWeight =
-          parseNumber(servingData?.serving_weight_grams) ||
-          parseNumber(servingData?.metric_serving_amount) ||
-          100;
-
-        return {
-          id: item.food_id,
-          name: details.food_name || "Unknown",
-          calories: convertToPer100g(servingData?.calories, servingWeight),
-          protein: convertToPer100g(servingData?.protein, servingWeight),
-          carbs: convertToPer100g(servingData?.carbohydrate, servingWeight),
-          fat: convertToPer100g(servingData?.fat, servingWeight),
-          sugar: convertToPer100g(servingData?.sugar, servingWeight),
-        };
-      } catch {
-        return null;
-      }
-    }
-
-    // Remove any failed results
-    const validResults = detailedFoods.filter((food): food is Record<string, string | number> => food !== null);
-
-    return NextResponse.json(validResults, { status: 200 });
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
+    return NextResponse.json(cleaned, { status: 200 });
+  } catch (err) {
+    console.error("🔥  route failed –", err);
+    return NextResponse.json({ error: err }, { status: 500 });
   }
 }
