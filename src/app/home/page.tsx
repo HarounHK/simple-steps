@@ -142,7 +142,7 @@ export default function HomePage() {
       </div>
 
       {/* Weekly summary, charts, and export buttons */}
-      <div className="w-full flex flex-col items-center">
+      <div id="chartSection" className="w-full flex flex-col items-center">
         <div className="mb-6">
           <WeeklySummary glucoseData={glucoseData} />
         </div>
