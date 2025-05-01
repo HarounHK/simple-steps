@@ -6,7 +6,7 @@ import User from "@/app/models/user";
 import Chat from "@/app/models/chat";
 
 export async function GET() {
-  // @ts-expect-error
+  // @ts-expect-errorfff
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
