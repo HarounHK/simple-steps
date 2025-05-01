@@ -5,6 +5,12 @@ const FATSECRET_API_URL = "https://platform.fatsecret.com/rest/server.api";
 const CLIENT_ID = process.env.FATSECRET_CLIENT_ID!;
 const CLIENT_SECRET = process.env.FATSECRET_CLIENT_SECRET!;
 
+console.log(
+  "FatSecret creds length",
+  CLIENT_ID.length,
+  CLIENT_SECRET.length
+);
+
 // Interfaces
 interface FoodItem {
   food_id: string;
@@ -46,6 +52,22 @@ function convertToPer100g(nutrientValue: unknown, servingWeight: number): string
 // Fetches an OAuth access token from FatSecret.
 async function fetchAccessToken(): Promise<string> {
   const url = "https://oauth.fatsecret.com/connect/token";
+
+  const res = await fetch("https://platform.fatsecret.com/rest/server.api?method=profile.get_status");
+  console.log(res.status); // should be 401/403, never ECONNREFUSED or ENOTFOUND
+
+  const id  = process.env.FATSECRET_CLIENT_ID?.trim();
+  const sec = process.env.FATSECRET_CLIENT_SECRET?.trim();
+  
+  if (!id || !sec) {
+    throw new Error("FatSecret env vars are missing");
+  }
+
+  console.log(
+    "FatSecret creds length",
+    CLIENT_ID.length,
+    CLIENT_SECRET.length
+  );
 
   const response = await fetch(url, {
     method: "POST",
